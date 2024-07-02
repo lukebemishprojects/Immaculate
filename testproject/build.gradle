@@ -19,8 +19,11 @@ immaculate {
         removeUnusedImports()
         toggleOff = 'spotless:off'
         toggleOn = 'spotless:on'
+        eclipse {
+            config = project.file('eclipse-options.xml')
+        }
 
-        linewise('noWildcardImpors') {
+        linewise('noWildcardImports') {
             if (it.endsWith('*;')) {
                 throw new GradleException('No wildcard imports are allowed!')
             }

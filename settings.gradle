@@ -1,2 +1,3 @@
 rootProject.name = 'immaculate'
 
+include 'eclipse-jdt-wrapper'

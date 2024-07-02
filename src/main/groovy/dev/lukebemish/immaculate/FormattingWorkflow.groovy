@@ -1,16 +1,19 @@
 package dev.lukebemish.immaculate
 
+import dev.lukebemish.immaculate.steps.EclipseJdtFormatStep
 import dev.lukebemish.immaculate.steps.GoogleJavaFormatStep
 import dev.lukebemish.immaculate.steps.LinewiseStep
 import dev.lukebemish.immaculate.steps.NoTabsStep
 import dev.lukebemish.immaculate.steps.TrailingNewlineStep
 import groovy.transform.CompileStatic
+import org.gradle.api.Action
 import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer
 import org.gradle.api.Named
 import org.gradle.api.NamedDomainObjectFactory
 import org.gradle.api.Project
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.SourceSetContainer
 
@@ -19,7 +22,8 @@ import java.util.function.UnaryOperator
 
 @CompileStatic
 abstract class FormattingWorkflow implements Named {
-    abstract ExtensiblePolymorphicDomainObjectContainer<FormattingStep> getSteps()
+    protected abstract ExtensiblePolymorphicDomainObjectContainer<FormattingStep> getSteps()
+    protected abstract ListProperty<String> getStepOrder()
 
     abstract ConfigurableFileCollection getFiles()
 
@@ -42,17 +46,17 @@ abstract class FormattingWorkflow implements Named {
     }
 
     void linewise(String name, UnaryOperator<String> customAction) {
-        steps.register(name, LinewiseStep) {
+        step(name, LinewiseStep) {
             it.action.set(customAction)
         }
     }
 
     void trailingNewline() {
-        steps.register('trailingNewline', TrailingNewlineStep)
+        step('trailingNewline', TrailingNewlineStep)
     }
 
     void noTabs(int spacesPerTab) {
-        steps.register('noTabs', NoTabsStep) {
+        step('noTabs', NoTabsStep) {
             it.spacesPerTab.set(spacesPerTab)
         }
     }
@@ -62,10 +66,27 @@ abstract class FormattingWorkflow implements Named {
     }
 
     void removeUnusedImports() {
-        steps.register('removeUnusedImports', GoogleJavaFormatStep) {
+        step('removeUnusedImports', GoogleJavaFormatStep) {
             it.args.addAll('--fix-imports-only', '--skip-sorting-imports')
             it.defaultVersion()
         }
+    }
+
+    void eclipse(Action<EclipseJdtFormatStep> action) {
+        step('eclipse', EclipseJdtFormatStep) {
+            action.execute(it)
+        }
+    }
+
+    <T extends FormattingStep> void step(String name, Class<T> type, Action<? super T> action) {
+        // Ugh, groovy 3 type inference...
+        steps.<T>register(name, type as Class, action as Action)
+        stepOrder.add(name)
+    }
+
+    <T extends FormattingStep> void step(String name, Class<T> type) {
+        steps.<T>register(name, type as Class)
+        stepOrder.add(name)
     }
 
     FormattingWorkflow() {
@@ -75,7 +96,7 @@ abstract class FormattingWorkflow implements Named {
             registerStepType(clazz)
         }
         for (Class<? extends FormattingStep> clazz : [
-                GoogleJavaFormatStep
+                GoogleJavaFormatStep, EclipseJdtFormatStep
         ]) {
             registerFormatterStepType(clazz)
         }

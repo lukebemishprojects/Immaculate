@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Objects;
 
 public class ImmaculatePlugin implements Plugin<Project> {
+    public static final String PLUGIN_VERSION = ImmaculatePlugin.class.getPackage().getImplementationVersion();
+
     @Override
     public void apply(Project project) {
         var extension = project.getExtensions().create("immaculate", ImmaculateExtension.class);
@@ -27,10 +29,7 @@ public class ImmaculatePlugin implements Plugin<Project> {
             extension.getWorkflows().forEach(workflow -> {
                 var workflowApply = project.getTasks().register(workflow.getName() + "ImmaculateApply", CheckTask.class, task -> {
                     task.getApplyFixes().set(true);
-                    task.getSteps().set(workflow.getSteps());
-                    task.getFiles().from(workflow.getFiles());
-                    task.getToggleOff().set(workflow.getToggleOff());
-                    task.getToggleOn().set(workflow.getToggleOn());
+                    task.from(workflow);
                 });
                 applyTask.configure(task -> {
                     task.dependsOn(workflowApply);
@@ -38,11 +37,8 @@ public class ImmaculatePlugin implements Plugin<Project> {
 
 
                 var workflowCheck = project.getTasks().register(workflow.getName() + "ImmaculateCheck", CheckTask.class, task -> {
-                    task.getSteps().set(workflow.getSteps());
-                    task.getFiles().from(workflow.getFiles());
+                    task.from(workflow);
                     task.mustRunAfter(workflowApply);
-                    task.getToggleOff().set(workflow.getToggleOff());
-                    task.getToggleOn().set(workflow.getToggleOn());
                 });
                 checkTask.configure(task -> {
                     task.dependsOn(workflowCheck);

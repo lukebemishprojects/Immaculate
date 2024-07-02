@@ -1,6 +1,6 @@
 package dev.lukebemish.immaculate.steps;
 
-import dev.lukebemish.immaculate.Formatter;
+import dev.lukebemish.immaculate.FormatterDependencies;
 import org.gradle.api.Action;
 import org.gradle.api.Project;
 import org.gradle.api.file.ConfigurableFileCollection;
@@ -12,15 +12,15 @@ import org.gradle.api.tasks.Internal;
 import javax.inject.Inject;
 
 public abstract class ExternalFormattingStep extends AbstractFormattingStep {
-    private transient final Formatter formatter;
+    private transient final FormatterDependencies formatterDependencies;
 
     @SuppressWarnings("UnstableApiUsage")
     @Inject
     public ExternalFormattingStep(String name, String workflowName, Project project, ObjectFactory objectFactory) {
         super(name);
-        this.formatter = objectFactory.newInstance(Formatter.class);
+        this.formatterDependencies = objectFactory.newInstance(FormatterDependencies.class);
         var configuration = project.getConfigurations().create("immaculate"+capitalize(workflowName)+capitalize(name)+"FormatterClasspath");
-        configuration.fromDependencyCollector(formatter.getRuntime());
+        configuration.fromDependencyCollector(formatterDependencies.getRuntime());
         getFormatterClasspath().from(configuration);
     }
 
@@ -36,11 +36,11 @@ public abstract class ExternalFormattingStep extends AbstractFormattingStep {
     public abstract ConfigurableFileCollection getFormatterClasspath();
 
     @Internal
-    public Formatter getFormatter() {
-        return formatter;
+    public FormatterDependencies getFormatter() {
+        return formatterDependencies;
     }
 
-    public void formatter(Action<Formatter> action) {
+    public void formatter(Action<FormatterDependencies> action) {
         action.execute(getFormatter());
     }
 }

@@ -39,6 +39,14 @@ gradlePlugin {
     }
 }
 
+jar {
+    manifest {
+        attributes(
+            'Implementation-Version': version
+        )
+    }
+}
+
 tasks.named('wrapper', Wrapper) {
     distributionType = Wrapper.DistributionType.ALL
 }

@@ -1,11 +1,7 @@
 package dev.lukebemish.immaculate
 
 import groovy.transform.CompileStatic
-import org.eclipse.jgit.diff.DiffFormatter
-import org.eclipse.jgit.diff.EditList
-import org.eclipse.jgit.diff.MyersDiff
-import org.eclipse.jgit.diff.RawText
-import org.eclipse.jgit.diff.RawTextComparator
+import org.eclipse.jgit.diff.*
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
@@ -24,6 +20,9 @@ import java.nio.charset.StandardCharsets
 abstract class CheckTask extends DefaultTask {
     @Nested
     abstract ListProperty<FormattingStep> getSteps()
+
+    @Input
+    abstract ListProperty<String> getStepOrder()
 
     @Incremental
     @InputFiles
@@ -48,6 +47,10 @@ abstract class CheckTask extends DefaultTask {
     void execute(InputChanges inputs) {
         if (getApplyFixes().get()) {
             getOldCopyDirectory().get().asFile.deleteDir()
+        }
+        Map<String, FormattingStep> stepsMap = [:]
+        getSteps().get().each { step ->
+            stepsMap.put(step.name, step)
         }
         inputs.getFileChanges(files).each { change ->
             if (change.changeType !== ChangeType.MODIFIED && change.fileType === FileType.FILE) {
@@ -87,11 +90,12 @@ abstract class CheckTask extends DefaultTask {
                 var originalLines = text.split(/((\r\n)|\r|\n)/, -1).toList()
                 boolean crlf = text.contains("\r\n")
                 var finalLines = Collections.unmodifiableList(originalLines)
-                steps.get().each { step ->
+                stepOrder.get().each { stepName ->
+                    var step = stepsMap[stepName]
                     var lines = finalLines
                     List<String> newLines
                     try {
-                        newLines = step.fix(lines)
+                        newLines = step.fix(change.file.name, lines)
                     } catch (e) {
                         throw new RuntimeException("Error checking file ${change.file.name} at step ${step.name}", e)
                     }
@@ -164,5 +168,13 @@ abstract class CheckTask extends DefaultTask {
         outputs.upToDateWhen { false }
         applyFixes.convention(false)
         oldCopyDirectory.convention(project.layout.buildDirectory.dir("immaculate/${this.name}"))
+    }
+
+    protected void from(FormattingWorkflow workflow) {
+        this.getSteps().set(workflow.getSteps())
+        this.getStepOrder().set(workflow.getStepOrder())
+        this.getFiles().from(workflow.getFiles())
+        this.getToggleOff().set(workflow.getToggleOff())
+        this.getToggleOn().set(workflow.getToggleOn())
     }
 }

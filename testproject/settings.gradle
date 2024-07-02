@@ -2,4 +2,6 @@ pluginManagement {
     includeBuild '../'
 }
 
+includeBuild '../'
+
 rootProject.name = 'immaculate-testproject'

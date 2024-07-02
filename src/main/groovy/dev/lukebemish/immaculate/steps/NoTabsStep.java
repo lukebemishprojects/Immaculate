@@ -1,6 +1,5 @@
 package dev.lukebemish.immaculate.steps;
 
-import dev.lukebemish.immaculate.FormattingStep;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 
@@ -17,7 +16,7 @@ public abstract class NoTabsStep extends AbstractFormattingStep {
     public abstract Property<Integer> getSpacesPerTab();
 
     @Override
-    public List<String> fix(List<String> lines) {
+    public List<String> fix(String fileName, List<String> lines) {
         return lines.stream()
                 .map(line -> line.replace("\t", " ".repeat(getSpacesPerTab().get())))
                 .toList();

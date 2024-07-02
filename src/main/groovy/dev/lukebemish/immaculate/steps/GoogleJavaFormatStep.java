@@ -17,7 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public abstract class GoogleJavaFormatStep extends ExternalFormattingStep {
-    private final transient ExecOperations execOperations;
+    private final ExecOperations execOperations;
 
     @Inject
     public GoogleJavaFormatStep(String name, String workflowName, Project project, ObjectFactory objectFactory, ExecOperations execOperations, JavaToolchainService javaToolchainService) {
@@ -46,7 +46,7 @@ public abstract class GoogleJavaFormatStep extends ExternalFormattingStep {
     );
 
     @Override
-    public List<String> fix(List<String> lines) {
+    public List<String> fix(String fileName, List<String> lines) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         var result = execOperations.javaexec(spec -> {
             spec.setIgnoreExitValue(true);
