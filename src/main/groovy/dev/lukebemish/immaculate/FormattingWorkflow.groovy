@@ -11,6 +11,7 @@ import org.gradle.api.NamedDomainObjectFactory
 import org.gradle.api.Project
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.SourceSetContainer
 
 import javax.inject.Inject
@@ -24,6 +25,9 @@ abstract class FormattingWorkflow implements Named {
 
     @Inject
     protected abstract Project getProject()
+
+    abstract Property<String> getToggleOff()
+    abstract Property<String> getToggleOn()
 
     void java() {
         SourceSetContainer sourceSets = project.extensions.getByType(SourceSetContainer)

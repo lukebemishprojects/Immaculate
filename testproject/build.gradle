@@ -17,6 +17,8 @@ immaculate {
         trailingNewline()
         noTabs()
         removeUnusedImports()
+        toggleOff = 'spotless:off'
+        toggleOn = 'spotless:on'
 
         linewise('noWildcardImpors') {
             if (it.endsWith('*;')) {
