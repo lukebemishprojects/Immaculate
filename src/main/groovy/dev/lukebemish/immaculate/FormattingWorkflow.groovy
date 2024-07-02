@@ -66,9 +66,23 @@ abstract class FormattingWorkflow implements Named {
         noTabs(4)
     }
 
-    void removeUnusedImports() {
+    void googleRemoveUnusedImports() {
         step('removeUnusedImports', GoogleJavaFormatStep) {
             it.args.addAll('--fix-imports-only', '--skip-sorting-imports')
+            it.defaultVersion()
+        }
+    }
+
+    void googleSortImports() {
+        step('removeUnusedImports', GoogleJavaFormatStep) {
+            it.args.addAll('--fix-imports-only', '--skip-removing-unused-imports')
+            it.defaultVersion()
+        }
+    }
+
+    void googleFixImports() {
+        step('removeUnusedImports', GoogleJavaFormatStep) {
+            it.args.addAll('--fix-imports-only')
             it.defaultVersion()
         }
     }

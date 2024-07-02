@@ -16,7 +16,7 @@ immaculate {
         java()
         trailingNewline()
         noTabs()
-        removeUnusedImports()
+        googleFixImports()
         toggleOff = 'spotless:off'
         toggleOn = 'spotless:on'
         eclipse {
