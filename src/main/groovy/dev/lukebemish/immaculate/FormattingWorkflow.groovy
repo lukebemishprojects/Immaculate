@@ -1,5 +1,6 @@
 package dev.lukebemish.immaculate
 
+import dev.lukebemish.immaculate.steps.CustomStep
 import dev.lukebemish.immaculate.steps.EclipseJdtFormatStep
 import dev.lukebemish.immaculate.steps.GoogleJavaFormatStep
 import dev.lukebemish.immaculate.steps.LinewiseStep
@@ -78,6 +79,16 @@ abstract class FormattingWorkflow implements Named {
         }
     }
 
+    void noTrailingSpaces() {
+        linewise('noTrailingSpaces') { it.stripTrailing() }
+    }
+
+    void custom(String name, UnaryOperator<String> customAction) {
+        step(name, CustomStep) {
+            it.action.set(customAction)
+        }
+    }
+
     <T extends FormattingStep> void step(String name, Class<T> type, Action<? super T> action) {
         // Ugh, groovy 3 type inference...
         steps.<T>register(name, type as Class, action as Action)
@@ -91,12 +102,12 @@ abstract class FormattingWorkflow implements Named {
 
     FormattingWorkflow() {
         for (Class<? extends FormattingStep> clazz : [
-                LinewiseStep, TrailingNewlineStep, NoTabsStep
+            LinewiseStep, TrailingNewlineStep, NoTabsStep, CustomStep
         ]) {
             registerStepType(clazz)
         }
         for (Class<? extends FormattingStep> clazz : [
-                GoogleJavaFormatStep, EclipseJdtFormatStep
+            GoogleJavaFormatStep, EclipseJdtFormatStep
         ]) {
             registerFormatterStepType(clazz)
         }
