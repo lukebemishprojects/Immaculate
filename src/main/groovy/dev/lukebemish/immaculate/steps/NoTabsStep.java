@@ -4,7 +4,6 @@ import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 
 import javax.inject.Inject;
-import java.util.List;
 
 public abstract class NoTabsStep extends AbstractFormattingStep {
     @Inject
@@ -16,9 +15,7 @@ public abstract class NoTabsStep extends AbstractFormattingStep {
     public abstract Property<Integer> getSpacesPerTab();
 
     @Override
-    public List<String> fix(String fileName, List<String> lines) {
-        return lines.stream()
-                .map(line -> line.replace("\t", " ".repeat(getSpacesPerTab().get())))
-                .toList();
+    public String fix(String fileName, String text) {
+        return text.replace("\t", " ".repeat(getSpacesPerTab().get()));
     }
 }

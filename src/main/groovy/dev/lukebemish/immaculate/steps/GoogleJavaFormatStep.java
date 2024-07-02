@@ -46,7 +46,7 @@ public abstract class GoogleJavaFormatStep extends ExternalFormattingStep {
     );
 
     @Override
-    public List<String> fix(String fileName, List<String> lines) {
+    public String fix(String fileName, String text) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         var result = execOperations.javaexec(spec -> {
             spec.setIgnoreExitValue(true);
@@ -59,14 +59,14 @@ public abstract class GoogleJavaFormatStep extends ExternalFormattingStep {
             GOOGLE_JAVA_FORMAT_ADD_EXPORTS.forEach(e -> spec.jvmArgs("--add-exports", e+"=ALL-UNNAMED"));
 
             spec.args(getArgs().get());
-            spec.setStandardInput(new ByteArrayInputStream(String.join("\n", lines).getBytes(StandardCharsets.UTF_8)));
+            spec.setStandardInput(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)));
             spec.setStandardOutput(outputStream);
         });
         if (result.getExitValue() != 0) {
             System.out.println(outputStream.toString(StandardCharsets.UTF_8));
         }
         result.rethrowFailure().assertNormalExitValue();
-        return List.of(outputStream.toString(StandardCharsets.UTF_8).split("(\\r\\n|\\r|\\n)", -1));
+        return outputStream.toString(StandardCharsets.UTF_8);
     }
 
     @Input

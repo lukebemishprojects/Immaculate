@@ -18,7 +18,6 @@ import javax.inject.Inject;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 
 public abstract class EclipseJdtFormatStep extends ExternalFormattingStep {
     private final ExecOperations execOperations;
@@ -31,15 +30,15 @@ public abstract class EclipseJdtFormatStep extends ExternalFormattingStep {
         this.execOperations = execOperations;
         this.getFormatter().getRuntime().add("dev.lukebemish.immaculate:eclipse-jdt-wrapper", dep -> {
             if (ImmaculatePlugin.PLUGIN_VERSION != null) {
-                dep.version(constraint -> {
-                    constraint.require(ImmaculatePlugin.PLUGIN_VERSION);
-                });
+                dep.version(constraint ->
+                    constraint.require(ImmaculatePlugin.PLUGIN_VERSION)
+                );
             }
         });
     }
 
     @Override
-    public List<String> fix(String fileName, List<String> lines) {
+    public String fix(String fileName, String text) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         var result = execOperations.javaexec(spec -> {
             spec.setIgnoreExitValue(true);
@@ -51,14 +50,14 @@ public abstract class EclipseJdtFormatStep extends ExternalFormattingStep {
             spec.classpath(getFormatterClasspath());
             spec.getMainClass().set("dev.lukebemish.immaculate.eclipsejdtwrapper.Main");
 
-            spec.setStandardInput(new ByteArrayInputStream(String.join("\n", lines).getBytes(StandardCharsets.UTF_8)));
+            spec.setStandardInput(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)));
             spec.setStandardOutput(outputStream);
         });
         if (result.getExitValue() != 0) {
             System.out.println(outputStream.toString(StandardCharsets.UTF_8));
         }
         result.rethrowFailure().assertNormalExitValue();
-        return List.of(outputStream.toString(StandardCharsets.UTF_8).split("\\n", -1));
+        return outputStream.toString(StandardCharsets.UTF_8);
     }
 
     @Nested

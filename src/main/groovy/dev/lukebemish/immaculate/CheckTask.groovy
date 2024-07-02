@@ -87,26 +87,24 @@ abstract class CheckTask extends DefaultTask {
                 }
 
 
-                var originalLines = text.split(/((\r\n)|\r|\n)/, -1).toList()
                 boolean crlf = text.contains("\r\n")
-                var finalLines = Collections.unmodifiableList(originalLines)
+                var finalText = text
                 stepOrder.get().each { stepName ->
                     var step = stepsMap[stepName]
-                    var lines = finalLines
-                    List<String> newLines
+                    String newText
                     try {
-                        newLines = step.fix(change.file.name, lines)
+                        newText = step.fix(change.file.name, finalText)
                     } catch (e) {
                         throw new RuntimeException("Error checking file ${change.file.name} at step ${step.name}", e)
                     }
-                    if (newLines !== null && lines != newLines) {
-                        if (lines.any { it === null }) {
-                            throw new RuntimeException("Attempted to correct to null line for file ${change.file.name} in step ${step.name}; we don't know what this means")
-                        }
-                        finalLines = Collections.unmodifiableList(newLines)
+                    if (newText !== null && finalText != newText) {
+                        finalText = newText
                     }
                 }
-                String finalText = finalLines.join(crlf ? "\r\n" : '\n')
+                finalText = finalText.replace("\r\n", "\n")
+                if (crlf) {
+                    finalText = finalText.replace("\n", "\r\n")
+                }
 
                 // Replace toggles
                 if (getToggleOff().isPresent() && getToggleOn().isPresent()) {

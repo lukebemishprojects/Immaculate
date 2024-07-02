@@ -4,20 +4,22 @@ import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Nested;
 
 import javax.inject.Inject;
-import java.util.List;
+import java.util.Arrays;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 public abstract class LinewiseStep extends AbstractFormattingStep {
     @Nested
     public abstract Property<UnaryOperator<String>> getAction();
 
     @Override
-    public List<String> fix(String fileName, List<String> lines) {
+    public String fix(String fileName, String text) {
         var operator = getAction().get();
-        return lines.stream().map(l -> {
+        var lines = text.split("((\r\n)|\n)", -1);
+        return Arrays.stream(lines).map(l -> {
             var n = operator.apply(l);
             return n == null ? l : n;
-        }).toList();
+        }).collect(Collectors.joining("\n"));
     }
 
     @Inject
