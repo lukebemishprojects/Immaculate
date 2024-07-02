@@ -87,6 +87,12 @@ abstract class FormattingWorkflow implements Named {
         }
     }
 
+    void google() {
+        step('google', GoogleJavaFormatStep) {
+            it.defaultVersion()
+        }
+    }
+
     void eclipse(Action<EclipseJdtFormatStep> action) {
         step('eclipse', EclipseJdtFormatStep) {
             action.execute(it)
