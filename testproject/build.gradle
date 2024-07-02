@@ -1,0 +1,37 @@
+plugins {
+    id 'java'
+    id 'dev.lukebemish.immaculate'
+}
+
+repositories {
+    mavenCentral()
+}
+
+tasks.named('wrapper', Wrapper) {
+    distributionType = Wrapper.DistributionType.ALL
+}
+
+immaculate {
+    workflows.register('java') {
+        java()
+        trailingNewline()
+        noTabs()
+        removeUnusedImports()
+
+        linewise('noWildcardImpors') {
+            if (it.endsWith('*;')) {
+                throw new GradleException('No wildcard imports are allowed!')
+            }
+        }
+
+        linewise('noNotNull') {
+            if (it.contains('@NotNull') || it.contains('@Nonnull')) {
+                throw new GradleException('@NotNull and @Nonnull are disallowed.')
+            }
+        }
+
+        linewise('jetbrainsNullable') {
+            it.replace('javax.annotation.Nullable', 'org.jetbrains.annotations.Nullable')
+        }
+    }
+}
