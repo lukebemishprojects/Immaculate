@@ -27,7 +27,6 @@ repositories {
 dependencies {
     implementation gradleApi()
     implementation 'org.eclipse.jgit:org.eclipse.jgit:6.10.0.202406032230-r'
-    api 'net.neoforged:groovydslimprover:1.0.15'
 }
 
 gradlePlugin {
