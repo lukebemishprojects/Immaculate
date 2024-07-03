@@ -23,9 +23,6 @@ abstract class CheckTask extends DefaultTask {
     @Nested
     abstract ListProperty<FormattingStep> getSteps()
 
-    @Input
-    abstract ListProperty<String> getStepOrder()
-
     @InputFiles
     @Incremental
     @PathSensitive(PathSensitivity.NAME_ONLY)
@@ -56,11 +53,7 @@ abstract class CheckTask extends DefaultTask {
         if (getApplyFixes().get()) {
             getOldCopyDirectory().get().asFile.deleteDir()
         }
-        Map<String, FormattingStep> stepsMap = [:]
-        getSteps().get().each { step ->
-            stepsMap.put(step.name, step)
-        }
-        List<NamedFormatter> formatters = stepOrder.get().collect { new NamedFormatter(it, stepsMap[it].formatter()) }
+        List<NamedFormatter> formatters = steps.get().collect { new NamedFormatter(it.name, it.formatter()) }
         List<Exception> exceptions = []
         StreamSupport.stream(inputs.getFileChanges(files).spliterator(), true).forEach { change ->
             if (change.changeType !== ChangeType.REMOVED && change.fileType === FileType.FILE) {
@@ -210,7 +203,6 @@ abstract class CheckTask extends DefaultTask {
 
     protected void from(FormattingWorkflow workflow) {
         this.getSteps().set(workflow.getSteps())
-        this.getStepOrder().set(workflow.getStepOrder())
         this.getFiles().from(workflow.getFiles())
         this.getToggleOff().set(workflow.getToggleOff())
         this.getToggleOn().set(workflow.getToggleOn())

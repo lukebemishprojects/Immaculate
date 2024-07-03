@@ -5,14 +5,9 @@ import dev.lukebemish.immaculate.steps.EclipseJdtFormatStep
 import dev.lukebemish.immaculate.steps.GoogleJavaFormatStep
 import dev.lukebemish.immaculate.steps.LinewiseStep
 import groovy.transform.CompileStatic
-import org.gradle.api.Action
-import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer
-import org.gradle.api.Named
-import org.gradle.api.NamedDomainObjectFactory
-import org.gradle.api.Project
+import org.gradle.api.*
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.model.ObjectFactory
-import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.SourceSetContainer
 
@@ -21,9 +16,9 @@ import java.util.function.UnaryOperator
 
 @CompileStatic
 abstract class FormattingWorkflow implements Named {
-    // TODO: better approach to ordering here
-    protected abstract ExtensiblePolymorphicDomainObjectContainer<FormattingStep> getSteps()
-    protected abstract ListProperty<String> getStepOrder()
+    protected NamedDomainObjectList<FormattingStep> getSteps() {
+        return this.steps
+    }
 
     abstract ConfigurableFileCollection getFiles()
 
@@ -126,15 +121,19 @@ abstract class FormattingWorkflow implements Named {
     }
 
     <T extends FormattingStep> void step(String name, Class<T> type, Action<? super T> action) {
-        // Ugh, groovy 3 type inference...
-        steps.<T>register(name, type as Class, action as Action)
-        stepOrder.add(name)
+        steps.addLater(project.provider {
+            T step = createStep(type, name)
+            // Ugh, groovy 3 type checking
+            (action as Action).execute(step)
+            return step
+        })
     }
 
     <T extends FormattingStep> void step(String name, Class<T> type) {
-        steps.<T>register(name, type as Class)
-        stepOrder.add(name)
+        step(name, type) {}
     }
+
+    private final Map<Class<? extends FormattingStep>, NamedDomainObjectFactory<? extends FormattingStep>> factories = [:]
 
     FormattingWorkflow() {
         for (Class<? extends FormattingStep> clazz : [
@@ -149,14 +148,24 @@ abstract class FormattingWorkflow implements Named {
         }
     }
 
+    private <T extends FormattingStep> T createStep(Class<T> clazz, String name) {
+        NamedDomainObjectFactory<T> factory = factories.get(clazz) as NamedDomainObjectFactory<T>
+        if (factory == null) {
+            throw new IllegalArgumentException("No factory for step type $clazz")
+        }
+        return factory.create(name)
+    }
+
     @Inject
     protected abstract ObjectFactory getObjects();
 
+    private final NamedDomainObjectList<FormattingStep> steps = getObjects().namedDomainObjectList(FormattingStep)
+
     private <T extends FormattingStep> void registerStepType(Class<T> clazz) {
-        steps.registerFactory(clazz, { String name -> (T) objects.newInstance(clazz, name) } as NamedDomainObjectFactory<T>)
+        factories.put(clazz, { String name -> (T) objects.newInstance(clazz, name) } as NamedDomainObjectFactory<T>)
     }
 
     private <T extends FormattingStep> void registerFormatterStepType(Class<T> clazz) {
-        steps.registerFactory(clazz, { String name -> (T) objects.newInstance(clazz, name, this.name) } as NamedDomainObjectFactory<T>)
+        factories.put(clazz, { String name -> (T) objects.newInstance(clazz, name, this.name) } as NamedDomainObjectFactory<T>)
     }
 }
