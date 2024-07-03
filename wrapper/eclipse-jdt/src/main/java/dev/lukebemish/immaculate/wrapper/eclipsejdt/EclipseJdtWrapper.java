@@ -1,5 +1,6 @@
-package dev.lukebemish.immaculate.eclipsejdtwrapper;
+package dev.lukebemish.immaculate.wrapper.eclipsejdt;
 
+import dev.lukebemish.immaculate.wrapper.Wrapper;
 import org.eclipse.jdt.core.formatter.CodeFormatter;
 import org.eclipse.jdt.internal.formatter.DefaultCodeFormatter;
 import org.eclipse.jface.text.BadLocationException;
@@ -11,21 +12,28 @@ import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class Main {
-    public static void main(String[] args) {
-        String fileName = args[0];
+public class EclipseJdtWrapper implements Wrapper {
+    private final File configFile;
+
+    public EclipseJdtWrapper(String[] args) {
+        if (args.length > 0) {
+            configFile = new File(args[0]);
+        } else {
+            configFile = null;
+        }
+    }
+
+    @Override
+    public String format(String fileName, String text) {
         Map<String, String> options;
-        if (args.length >= 2) {
-            File configFile = new File(args[1]);
+        if (configFile != null) {
             options = readProperties(configFile);
         } else {
             options = new HashMap<>();
@@ -37,21 +45,15 @@ public class Main {
         } else {
             kind |= CodeFormatter.K_COMPILATION_UNIT;
         }
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
-            StringBuilder builder = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                builder.append(line).append('\n');
-            }
-            String source = builder.toString();
-            var textEdit = formatter.format(kind, source, 0, source.length(), 0, "\n");
+        try {
+            var textEdit = formatter.format(kind, text, 0, text.length(), 0, "\n");
             if (textEdit == null) {
                 throw new RuntimeException("Failed to format source.");
             }
-            var document = new Document(source);
+            var document = new Document(text);
             textEdit.apply(document);
-            System.out.print(document.get());
-        } catch (IOException | BadLocationException e) {
+            return document.get();
+        } catch (BadLocationException e) {
             throw new RuntimeException(e);
         }
     }

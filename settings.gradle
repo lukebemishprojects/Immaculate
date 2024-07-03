@@ -1,3 +1,5 @@
 rootProject.name = 'immaculate'
 
-include 'eclipse-jdt-wrapper'
+include 'wrapper'
+include 'wrapper:eclipse-jdt'
+include 'wrapper:google-java-format'

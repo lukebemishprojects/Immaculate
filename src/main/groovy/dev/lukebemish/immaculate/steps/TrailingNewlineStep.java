@@ -1,5 +1,7 @@
 package dev.lukebemish.immaculate.steps;
 
+import dev.lukebemish.immaculate.FileFormatter;
+
 import javax.inject.Inject;
 
 public abstract class TrailingNewlineStep extends AbstractFormattingStep {
@@ -9,10 +11,12 @@ public abstract class TrailingNewlineStep extends AbstractFormattingStep {
     }
 
     @Override
-    public String fix(String fileName, String text) {
-        if (!text.endsWith("\n") && !text.endsWith("\r\n")) {
-            return text + "\n";
-        }
-        return text;
+    public FileFormatter formatter() {
+        return (fileName, text) -> {
+            if (!text.endsWith("\n") && !text.endsWith("\r\n")) {
+                return text + "\n";
+            }
+            return text;
+        };
     }
 }

@@ -1,34 +1,24 @@
 package dev.lukebemish.immaculate.steps;
 
+import dev.lukebemish.immaculate.ForkFormatterSpec;
 import dev.lukebemish.immaculate.ImmaculatePlugin;
 import org.gradle.api.Project;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.model.ObjectFactory;
-import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.InputFile;
-import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
-import org.gradle.jvm.toolchain.JavaLauncher;
 import org.gradle.jvm.toolchain.JavaToolchainService;
-import org.gradle.process.ExecOperations;
 
 import javax.inject.Inject;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.nio.charset.StandardCharsets;
 
-public abstract class EclipseJdtFormatStep extends ExternalFormattingStep {
-    private final ExecOperations execOperations;
-
+public abstract class EclipseJdtFormatStep extends WrapperFormattingStep {
     @SuppressWarnings("UnstableApiUsage")
     @Inject
-    public EclipseJdtFormatStep(String name, String workflowName, Project project, ObjectFactory objectFactory, ExecOperations execOperations, JavaToolchainService javaToolchainService) {
-        super(name, workflowName, project, objectFactory);
-        getJavaLauncher().convention(javaToolchainService.launcherFor(spec -> {}));
-        this.execOperations = execOperations;
-        this.getFormatter().getRuntime().add("dev.lukebemish.immaculate:eclipse-jdt-wrapper", dep -> {
+    public EclipseJdtFormatStep(String name, String workflowName, Project project, ObjectFactory objectFactory, JavaToolchainService javaToolchainService) {
+        super(name, workflowName, project, objectFactory, javaToolchainService);
+        this.getFormatter().getRuntime().add("dev.lukebemish.immaculate.wrapper:eclipse-jdt", dep -> {
             if (ImmaculatePlugin.PLUGIN_VERSION != null) {
                 dep.version(constraint ->
                     constraint.require(ImmaculatePlugin.PLUGIN_VERSION)
@@ -37,31 +27,25 @@ public abstract class EclipseJdtFormatStep extends ExternalFormattingStep {
         });
     }
 
-    @Override
-    public String fix(String fileName, String text) {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        var result = execOperations.javaexec(spec -> {
-            spec.setIgnoreExitValue(true);
-            spec.executable(getJavaLauncher().get().getExecutablePath());
-            spec.args(fileName);
-            if (getConfig().isPresent()) {
-                spec.args(getConfig().get().getAsFile().getAbsolutePath());
-            }
-            spec.classpath(getFormatterClasspath());
-            spec.getMainClass().set("dev.lukebemish.immaculate.eclipsejdtwrapper.Main");
+    private static final String MAVEN_PATH = "org.eclipse.jdt:org.eclipse.jdt.core";
+    private static final String DEFAULT_VERSION = "3.38.0";
 
-            spec.setStandardInput(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)));
-            spec.setStandardOutput(outputStream);
-        });
-        if (result.getExitValue() != 0) {
-            System.out.println(outputStream.toString(StandardCharsets.UTF_8));
-        }
-        result.rethrowFailure().assertNormalExitValue();
-        return outputStream.toString(StandardCharsets.UTF_8);
+    public void defaultVersion() {
+        version(DEFAULT_VERSION);
     }
 
-    @Nested
-    public abstract Property<JavaLauncher> getJavaLauncher();
+    @SuppressWarnings("UnstableApiUsage")
+    public void version(String version) {
+        getFormatter().getRuntime().add(MAVEN_PATH + ":" + version);
+    }
+
+    @Override
+    protected void configureSpec(ForkFormatterSpec spec) {
+        spec.getWrapperClass().set("dev.lukebemish.immaculate.wrapper.eclipsejdt.EclipseJdtWrapper");
+        if (getConfig().isPresent()) {
+            spec.getProgramArgs().add(getConfig().get().getAsFile().getAbsolutePath());
+        }
+    }
 
     @InputFile
     @Optional

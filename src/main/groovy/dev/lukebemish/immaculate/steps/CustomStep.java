@@ -1,5 +1,6 @@
 package dev.lukebemish.immaculate.steps;
 
+import dev.lukebemish.immaculate.FileFormatter;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Nested;
 
@@ -11,9 +12,9 @@ public abstract class CustomStep extends AbstractFormattingStep {
     public abstract Property<UnaryOperator<String>> getAction();
 
     @Override
-    public String fix(String fileName, String text) {
+    public FileFormatter formatter() {
         var operator = getAction().get();
-        return operator.apply(text);
+        return (fileName, text) -> operator.apply(text);
     }
 
     @Inject

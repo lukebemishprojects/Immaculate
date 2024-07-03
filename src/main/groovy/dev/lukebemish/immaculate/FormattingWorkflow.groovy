@@ -23,6 +23,7 @@ import java.util.function.UnaryOperator
 
 @CompileStatic
 abstract class FormattingWorkflow implements Named {
+    // TODO: better approach to ordering here
     protected abstract ExtensiblePolymorphicDomainObjectContainer<FormattingStep> getSteps()
     protected abstract ListProperty<String> getStepOrder()
 
@@ -67,21 +68,21 @@ abstract class FormattingWorkflow implements Named {
     }
 
     void googleRemoveUnusedImports() {
-        step('removeUnusedImports', GoogleJavaFormatStep) {
+        step('googleRemoveUnusedImports', GoogleJavaFormatStep) {
             it.args.addAll('--fix-imports-only', '--skip-sorting-imports')
             it.defaultVersion()
         }
     }
 
     void googleSortImports() {
-        step('removeUnusedImports', GoogleJavaFormatStep) {
+        step('googleSortImports', GoogleJavaFormatStep) {
             it.args.addAll('--fix-imports-only', '--skip-removing-unused-imports')
             it.defaultVersion()
         }
     }
 
     void googleFixImports() {
-        step('removeUnusedImports', GoogleJavaFormatStep) {
+        step('googleFixImports', GoogleJavaFormatStep) {
             it.args.addAll('--fix-imports-only')
             it.defaultVersion()
         }
@@ -93,8 +94,16 @@ abstract class FormattingWorkflow implements Named {
         }
     }
 
+    void google(Action<GoogleJavaFormatStep> action) {
+        step('google', GoogleJavaFormatStep) {
+            it.defaultVersion()
+            action.execute(it)
+        }
+    }
+
     void eclipse(Action<EclipseJdtFormatStep> action) {
         step('eclipse', EclipseJdtFormatStep) {
+            it.defaultVersion()
             action.execute(it)
         }
     }

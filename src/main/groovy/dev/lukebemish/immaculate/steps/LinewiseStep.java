@@ -1,5 +1,6 @@
 package dev.lukebemish.immaculate.steps;
 
+import dev.lukebemish.immaculate.FileFormatter;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Nested;
 
@@ -13,13 +14,15 @@ public abstract class LinewiseStep extends AbstractFormattingStep {
     public abstract Property<UnaryOperator<String>> getAction();
 
     @Override
-    public String fix(String fileName, String text) {
-        var operator = getAction().get();
-        var lines = text.split("((\r\n)|\n)", -1);
-        return Arrays.stream(lines).map(l -> {
-            var n = operator.apply(l);
-            return n == null ? l : n;
-        }).collect(Collectors.joining("\n"));
+    public FileFormatter formatter() {
+        return (fileName, text) -> {
+            var operator = getAction().get();
+            var lines = text.split("((\r\n)|\n)", -1);
+            return Arrays.stream(lines).map(l -> {
+                var n = operator.apply(l);
+                return n == null ? l : n;
+            }).collect(Collectors.joining("\n"));
+        };
     }
 
     @Inject

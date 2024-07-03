@@ -1,0 +1,18 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+}
+
+group = 'dev.lukebemish.immaculate.wrapper'
+version = '0.1.0'
+
+java.toolchain.languageVersion.set(JavaLanguageVersion.of(17))
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compileOnly 'com.google.googlejavaformat:google-java-format:1.22.0'
+    implementation project(':wrapper')
+}

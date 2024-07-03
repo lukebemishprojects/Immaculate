@@ -19,9 +19,9 @@ immaculate {
         googleFixImports()
         toggleOff = 'spotless:off'
         toggleOn = 'spotless:on'
-        eclipse {
+        /*eclipse {
             config = project.file('eclipse-options.xml')
-        }
+        }*/
 
         linewise('noWildcardImports') {
             if (it.endsWith('*;')) {
