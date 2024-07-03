@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -103,7 +104,7 @@ public class ForkFormatter implements FileFormatter {
     }
 
     private static final class ResultListener extends Thread {
-        private final Map<Integer, CompletableFuture<String>> results = new HashMap<>();
+        private final Map<Integer, CompletableFuture<String>> results = new ConcurrentHashMap<>();
         private final Socket socket;
         private final DataOutputStream output;
 

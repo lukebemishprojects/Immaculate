@@ -4,8 +4,6 @@ import dev.lukebemish.immaculate.steps.CustomStep
 import dev.lukebemish.immaculate.steps.EclipseJdtFormatStep
 import dev.lukebemish.immaculate.steps.GoogleJavaFormatStep
 import dev.lukebemish.immaculate.steps.LinewiseStep
-import dev.lukebemish.immaculate.steps.NoTabsStep
-import dev.lukebemish.immaculate.steps.TrailingNewlineStep
 import groovy.transform.CompileStatic
 import org.gradle.api.Action
 import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer
@@ -54,12 +52,28 @@ abstract class FormattingWorkflow implements Named {
     }
 
     void trailingNewline() {
-        step('trailingNewline', TrailingNewlineStep)
+        custom('trailingNewline') {
+            if (!it.endsWith("\n") && !it.endsWith("\r\n")) {
+                return it + "\n"
+            }
+            return it
+        }
     }
 
     void noTabs(int spacesPerTab) {
-        step('noTabs', NoTabsStep) {
-            it.spacesPerTab.set(spacesPerTab)
+        linewise('noTabs') {
+            StringBuilder sb = new StringBuilder()
+            for (int i = 0; i < it.length(); i++) {
+                char c = it.charAt(i)
+                if (c == '\t' as char) {
+                    sb.append(' '.repeat(spacesPerTab))
+                } else if (c == ' ' as char) {
+                    sb.append(c)
+                } else {
+                    sb.append(it.substring(i))
+                    break
+                }
+            }
         }
     }
 
@@ -70,40 +84,33 @@ abstract class FormattingWorkflow implements Named {
     void googleRemoveUnusedImports() {
         step('googleRemoveUnusedImports', GoogleJavaFormatStep) {
             it.args.addAll('--fix-imports-only', '--skip-sorting-imports')
-            it.defaultVersion()
         }
     }
 
     void googleSortImports() {
         step('googleSortImports', GoogleJavaFormatStep) {
             it.args.addAll('--fix-imports-only', '--skip-removing-unused-imports')
-            it.defaultVersion()
         }
     }
 
     void googleFixImports() {
         step('googleFixImports', GoogleJavaFormatStep) {
             it.args.addAll('--fix-imports-only')
-            it.defaultVersion()
         }
     }
 
     void google() {
-        step('google', GoogleJavaFormatStep) {
-            it.defaultVersion()
-        }
+        step('google', GoogleJavaFormatStep)
     }
 
     void google(Action<GoogleJavaFormatStep> action) {
         step('google', GoogleJavaFormatStep) {
-            it.defaultVersion()
             action.execute(it)
         }
     }
 
     void eclipse(Action<EclipseJdtFormatStep> action) {
         step('eclipse', EclipseJdtFormatStep) {
-            it.defaultVersion()
             action.execute(it)
         }
     }
@@ -131,7 +138,7 @@ abstract class FormattingWorkflow implements Named {
 
     FormattingWorkflow() {
         for (Class<? extends FormattingStep> clazz : [
-            LinewiseStep, TrailingNewlineStep, NoTabsStep, CustomStep
+            LinewiseStep, CustomStep
         ]) {
             registerStepType(clazz)
         }

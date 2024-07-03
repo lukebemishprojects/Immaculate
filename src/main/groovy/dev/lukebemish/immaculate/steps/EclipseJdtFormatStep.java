@@ -3,9 +3,13 @@ package dev.lukebemish.immaculate.steps;
 import dev.lukebemish.immaculate.ForkFormatterSpec;
 import dev.lukebemish.immaculate.ImmaculatePlugin;
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.model.ObjectFactory;
+import org.gradle.api.provider.Property;
+import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
@@ -25,18 +29,24 @@ public abstract class EclipseJdtFormatStep extends WrapperFormattingStep {
                 );
             }
         });
+        this.formatterDependency = objectFactory.property(Dependency.class);
+        formatterDependency.convention(getFormatter().module(MAVEN_PATH + ":" + DEFAULT_VERSION));
+        getFormatter().getRuntime().add(formatterDependency);
     }
 
     private static final String MAVEN_PATH = "org.eclipse.jdt:org.eclipse.jdt.core";
     private static final String DEFAULT_VERSION = "3.38.0";
 
-    public void defaultVersion() {
-        version(DEFAULT_VERSION);
+    private transient final Property<Dependency> formatterDependency;
+
+    @Internal
+    protected Property<Dependency> getFormatterDependency() {
+        return formatterDependency;
     }
 
     @SuppressWarnings("UnstableApiUsage")
     public void version(String version) {
-        getFormatter().getRuntime().add(MAVEN_PATH + ":" + version);
+        formatterDependency.set(getFormatter().module(MAVEN_PATH + ":" + version));
     }
 
     @Override

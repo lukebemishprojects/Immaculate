@@ -26,8 +26,8 @@ abstract class CheckTask extends DefaultTask {
     @Input
     abstract ListProperty<String> getStepOrder()
 
-    @Incremental
     @InputFiles
+    @Incremental
     @PathSensitive(PathSensitivity.NAME_ONLY)
     abstract ConfigurableFileCollection getFiles()
 
@@ -63,8 +63,8 @@ abstract class CheckTask extends DefaultTask {
         List<NamedFormatter> formatters = stepOrder.get().collect { new NamedFormatter(it, stepsMap[it].formatter()) }
         List<Exception> exceptions = []
         StreamSupport.stream(inputs.getFileChanges(files).spliterator(), true).forEach { change ->
-            try {
-                if (change.changeType !== ChangeType.MODIFIED && change.fileType === FileType.FILE) {
+            if (change.changeType !== ChangeType.REMOVED && change.fileType === FileType.FILE) {
+                try {
                     String originalText = change.file.text
                     String text = originalText
 
@@ -148,9 +148,11 @@ abstract class CheckTask extends DefaultTask {
                             throw new RuntimeException("File ${change.file.name} does not match formatting:\n${diff(originalText, finalText)}")
                         }
                     }
+                } catch (Exception e) {
+                    synchronized (exceptions) {
+                        exceptions.add(e)
+                    }
                 }
-            } catch (Exception e) {
-                exceptions.add(e)
             }
         }
         for (NamedFormatter formatter : formatters) {
@@ -177,6 +179,7 @@ abstract class CheckTask extends DefaultTask {
             }
             throw exception
         }
+
     }
 
     private static final String diff(String oldString, String newString) {
@@ -200,7 +203,7 @@ abstract class CheckTask extends DefaultTask {
     }
 
     CheckTask() {
-        outputs.upToDateWhen { false }
+        outputs.upToDateWhen { true }
         applyFixes.convention(false)
         oldCopyDirectory.convention(project.layout.buildDirectory.dir("immaculate/${this.name}"))
     }

@@ -46,6 +46,7 @@ public class EclipseJdtWrapper implements Wrapper {
             kind |= CodeFormatter.K_COMPILATION_UNIT;
         }
         try {
+            text = text.replace("\r\n", "\n");
             var textEdit = formatter.format(kind, text, 0, text.length(), 0, "\n");
             if (textEdit == null) {
                 throw new RuntimeException("Failed to format source.");
