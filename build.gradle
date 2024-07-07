@@ -1,13 +1,8 @@
 import org.gradle.api.attributes.plugin.GradlePluginApiVersion
 
 plugins {
-    id 'groovy-gradle-plugin'
+    id 'java-gradle-plugin'
 }
-
-group = 'dev.lukebemish'
-version = '0.1.0'
-
-java.toolchain.languageVersion.set(JavaLanguageVersion.of(17))
 
 ['apiElements', 'runtimeElements'].each {
     configurations.named(it).configure {
@@ -20,12 +15,9 @@ java.toolchain.languageVersion.set(JavaLanguageVersion.of(17))
     }
 }
 
-repositories {
-    mavenCentral()
-}
-
 dependencies {
     implementation gradleApi()
+    implementation 'commons-io:commons-io:2.16.1'
     implementation 'org.eclipse.jgit:org.eclipse.jgit:6.10.0.202406032230-r'
 }
 
@@ -41,7 +33,7 @@ gradlePlugin {
 jar {
     manifest {
         attributes(
-            'Implementation-Version': version
+            'Implementation-Version': version as String
         )
     }
 }

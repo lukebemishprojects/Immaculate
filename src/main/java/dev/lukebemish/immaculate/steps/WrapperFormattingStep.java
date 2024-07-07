@@ -1,9 +1,9 @@
 package dev.lukebemish.immaculate.steps;
 
 import dev.lukebemish.immaculate.FileFormatter;
-import dev.lukebemish.immaculate.ForkFormatter;
 import dev.lukebemish.immaculate.ForkFormatterSpec;
 import dev.lukebemish.immaculate.ImmaculatePlugin;
+import dev.lukebemish.immaculate.ForkFormatter;
 import org.gradle.api.Project;
 import org.gradle.api.logging.configuration.ShowStacktrace;
 import org.gradle.api.model.ObjectFactory;

@@ -1,9 +1,0 @@
-plugins {
-    id 'java-library'
-    id 'maven-publish'
-}
-
-group = 'dev.lukebemish.immaculate'
-version = '0.1.0'
-
-java.toolchain.languageVersion.set(JavaLanguageVersion.of(17))

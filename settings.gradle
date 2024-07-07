@@ -1,3 +1,37 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        maven { url 'https://maven.lukebemish.dev/releases/' }
+    }
+}
+
+plugins {
+    id 'dev.lukebemish.conventions' version '0.1.10'
+    id 'dev.lukebemish.managedversioning' version '1.2.19' apply false
+}
+
+gradle.lifecycle.beforeProject {
+    group = 'dev.lukebemish' + (project.path == ':' ? '' : '.immaculate' + project.path.split(':')[0..-2].join('.'))
+
+    apply plugin: 'dev.lukebemish.managedversioning'
+    apply plugin: 'java-library'
+    apply plugin: 'maven-publish'
+
+    managedVersioning {
+        versionFile.set rootProject.isolated.projectDirectory.file('version.properties')
+        versionPRs()
+        versionSnapshots()
+    }
+
+    managedVersioning.apply()
+
+    java.toolchain.languageVersion.set(JavaLanguageVersion.of(17))
+
+    repositories {
+        mavenCentral()
+    }
+}
+
 rootProject.name = 'immaculate'
 
 include 'wrapper'
