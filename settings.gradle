@@ -16,6 +16,7 @@ gradle.lifecycle.beforeProject {
     apply plugin: 'dev.lukebemish.managedversioning'
     apply plugin: 'java-library'
     apply plugin: 'maven-publish'
+    apply plugin: 'signing'
 
     managedVersioning {
         versionFile.set rootProject.isolated.projectDirectory.file('version.properties')
@@ -24,11 +25,22 @@ gradle.lifecycle.beforeProject {
     }
 
     managedVersioning.apply()
+    managedVersioning.publishing.mavenSnapshot(publishing)
+    managedVersioning.publishing.mavenStaging(publishing)
+    managedVersioning.publishing.mavenPullRequest(publishing)
 
-    java.toolchain.languageVersion.set(JavaLanguageVersion.of(17))
+    java {
+        toolchain.languageVersion.set(JavaLanguageVersion.of(17))
+        withSourcesJar()
+        withJavadocJar()
+    }
 
     repositories {
         mavenCentral()
+    }
+
+    tasks.register('publishCentral') {
+        group = 'publishing'
     }
 }
 

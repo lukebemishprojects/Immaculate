@@ -2,3 +2,21 @@ dependencies {
     compileOnly 'com.google.googlejavaformat:google-java-format:1.22.0'
     implementation project(':wrapper')
 }
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            managedVersioning.publishing.sign(signing, it)
+            managedVersioning.publishing.pom(it, 'Immaculate', 'BSD-3-Clause')
+            pom {
+                name = 'Immaculate -- Google Java Format Wrapper'
+                description = 'A wrapper around the Google java formatter'
+            }
+        }
+    }
+}
+
+tasks.named('publishCentral') {
+    dependsOn tasks.publish
+}

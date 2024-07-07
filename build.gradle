@@ -2,6 +2,7 @@ import org.gradle.api.attributes.plugin.GradlePluginApiVersion
 
 plugins {
     id 'java-gradle-plugin'
+    alias cLibs.plugins.gradlepublish
 }
 
 ['apiElements', 'runtimeElements'].each {
@@ -22,10 +23,16 @@ dependencies {
 }
 
 gradlePlugin {
+    website = 'https://github.com/lukebemishprojects/Immaculate'
+    vcsUrl = 'https://github.com/lukebemishprojects/Immaculate.git'
+
     plugins {
         immaculatePlugin {
             id = 'dev.lukebemish.immaculate'
             implementationClass = 'dev.lukebemish.immaculate.ImmaculatePlugin'
+            displayName = 'Immaculate'
+            description = 'A plugin for applying various code formatting'
+            tags.addAll(['format', 'style'])
         }
     }
 }
@@ -41,3 +48,74 @@ jar {
 tasks.named('wrapper', Wrapper) {
     distributionType = Wrapper.DistributionType.ALL
 }
+
+managedVersioning {
+    gitHubActions {
+        release {
+            prettyName = 'Release'
+            workflowDispatch = true
+            gradleJob {
+                name.set 'build'
+                buildCache()
+                setupGitUser()
+                readOnly = false
+                gradlew 'Tag Release', 'tagRelease'
+                gradlew 'Build', 'build'
+                push()
+                dependencySubmission()
+                recordVersion 'Record Version', 'version'
+            }
+            gradleJob {
+                name.set 'publishCentral'
+                buildCache()
+                needs.add('build')
+                gradlew 'Publish', 'publishCentral', 'closeAndReleaseSonatypeStagingRepository'
+                tag.set('${{needs.build.outputs.version}}')
+                sign()
+                mavenCentral()
+            }
+            gradleJob {
+                name.set 'publishPlugins'
+                buildCache()
+                needs.add('build')
+                gradlew 'Publish Plugins', 'publishPlugins'
+                tag.set('${{needs.build.outputs.version}}')
+                sign()
+                pluginPortal()
+            }
+        }
+        snapshot {
+            prettyName.set 'Snapshot'
+            workflowDispatch.set(true)
+            onBranches.add 'main'
+            gradleJob {
+                name.set 'build'
+                buildCache()
+                cacheReadOnly = false
+                gradlew 'Build', 'build'
+                gradlew 'Publish', 'publish'
+                mavenSnapshot('github')
+            }
+        }
+        build_pr {
+            prettyName.set 'Build PR'
+            pullRequest.set(true)
+            gradleJob {
+                name.set 'build'
+                gradlew 'Build', 'build'
+                gradlew 'Publish', 'publish'
+                pullRequestArtifact()
+            }
+        }
+        publish_pr {
+            prettyName.set 'Publish PR'
+            publishPullRequestAction(
+                'github',
+                "dev/lukebemish/immaculate,dev/lukebemish/immaculate/*,dev/lukebemish/immaculate/wrapper/*",
+                'Build PR'
+            )
+        }
+    }
+}
+
+managedVersioning.publishing.mavenCentral()
