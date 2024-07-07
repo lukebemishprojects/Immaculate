@@ -8,7 +8,7 @@ publishing {
         mavenJava(MavenPublication) {
             from components.java
             managedVersioning.publishing.sign(signing, it)
-            managedVersioning.publishing.pom(it, 'Immaculate', 'BSD-3-Clause')
+            managedVersioning.publishing.pom(it, github_repo, license)
             pom {
                 name = 'Immaculate -- Google Java Format Wrapper'
                 description = 'A wrapper around the Google java formatter'

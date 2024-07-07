@@ -13,10 +13,10 @@ plugins {
 gradle.lifecycle.beforeProject {
     group = 'dev.lukebemish' + (project.path == ':' ? '' : '.immaculate' + project.path.split(':')[0..-2].join('.'))
 
-    apply plugin: 'dev.lukebemish.managedversioning'
     apply plugin: 'java-library'
     apply plugin: 'maven-publish'
     apply plugin: 'signing'
+    apply plugin: 'dev.lukebemish.managedversioning'
 
     managedVersioning {
         versionFile.set rootProject.isolated.projectDirectory.file('version.properties')
@@ -41,6 +41,11 @@ gradle.lifecycle.beforeProject {
 
     tasks.register('publishCentral') {
         group = 'publishing'
+    }
+
+    tasks.withType(Sign).configureEach {
+        // Gradle broke something in 8.8 here, and now you can't publish plugins to other mavens if signing is disabled...
+        enabled System.getenv('GPG_KEY') !== null
     }
 }
 

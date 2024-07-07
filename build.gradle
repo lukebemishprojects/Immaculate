@@ -69,10 +69,11 @@ managedVersioning {
                 name.set 'publishCentral'
                 buildCache()
                 needs.add('build')
-                gradlew 'Publish', 'publishCentral', 'closeAndReleaseSonatypeStagingRepository'
+                gradlew 'Publish Central', 'publishCentral', 'closeAndReleaseSonatypeStagingRepository'
                 tag.set('${{needs.build.outputs.version}}')
                 sign()
                 mavenCentral()
+                mavenStaging('github')
             }
             gradleJob {
                 name.set 'publishPlugins'

@@ -133,9 +133,9 @@
                     "uses": "gradle/actions/setup-gradle@v3"
                 },
                 {
-                    "name": "Publish",
+                    "name": "Publish Central",
                     "run": "./gradlew publishCentral closeAndReleaseSonatypeStagingRepository",
-                    "id": "publish",
+                    "id": "publish_central",
                     "env": {
                         "BUILD_CACHE_PASSWORD": "${{ secrets.BUILD_CACHE_PASSWORD }}",
                         "BUILD_CACHE_USER": "${{ secrets.BUILD_CACHE_USER }}",
