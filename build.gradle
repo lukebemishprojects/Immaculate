@@ -81,7 +81,6 @@ managedVersioning {
                 needs.add('build')
                 gradlew 'Publish Plugins', 'publishPlugins'
                 tag.set('${{needs.build.outputs.version}}')
-                sign()
                 pluginPortal()
             }
         }
