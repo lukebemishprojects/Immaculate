@@ -67,15 +67,6 @@
                     "run": "git push && git push --tags"
                 },
                 {
-                    "name": "Submit Dependencies",
-                    "uses": "gradle/actions/dependency-submission@v3",
-                    "env": {
-                        "BUILD_CACHE_PASSWORD": "${{ secrets.BUILD_CACHE_PASSWORD }}",
-                        "BUILD_CACHE_USER": "${{ secrets.BUILD_CACHE_USER }}",
-                        "BUILD_CACHE_URL": "${{ secrets.BUILD_CACHE_URL }}"
-                    }
-                },
-                {
                     "name": "Record Version",
                     "run": "./gradlew recordVersion",
                     "id": "record_version",
@@ -89,6 +80,15 @@
                     "name": "Capture Recorded Version",
                     "run": "echo version=$(cat build/recordVersion.txt) >> \"$GITHUB_OUTPUT\"",
                     "id": "record_version_capture_version"
+                },
+                {
+                    "name": "Submit Dependencies",
+                    "uses": "gradle/actions/dependency-submission@v3",
+                    "env": {
+                        "BUILD_CACHE_PASSWORD": "${{ secrets.BUILD_CACHE_PASSWORD }}",
+                        "BUILD_CACHE_USER": "${{ secrets.BUILD_CACHE_USER }}",
+                        "BUILD_CACHE_URL": "${{ secrets.BUILD_CACHE_URL }}"
+                    }
                 }
             ]
         },
@@ -143,7 +143,10 @@
                         "GPG_KEY": "${{ secrets.GPG_KEY }}",
                         "GPG_PASSWORD": "${{ secrets.GPG_PASSWORD }}",
                         "SONATYPE_PASSWORD": "${{ secrets.SONATYPE_PASSWORD }}",
-                        "SONATYPE_USER": "${{ secrets.SONATYPE_USER }}"
+                        "SONATYPE_USER": "${{ secrets.SONATYPE_USER }}",
+                        "STAGING_MAVEN_PASSWORD": "${{ secrets.STAGING_MAVEN_PASSWORD }}",
+                        "STAGING_MAVEN_USER": "github",
+                        "STAGING_MAVEN_URL": "https://maven.lukebemish.dev/staging/"
                     }
                 }
             ]

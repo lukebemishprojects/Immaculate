@@ -1,6 +1,5 @@
 package dev.lukebemish.immaculate;
 
-import groovy.transform.TupleConstructor;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.diff.DiffFormatter;
@@ -28,10 +27,8 @@ import org.gradle.work.InputChanges;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.security.MessageDigest;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -153,7 +150,7 @@ public abstract class CheckTask extends DefaultTask {
                         if (getApplyFixes().get()) {
                             var timestamp = OLD_FILE_DATE_FORMAT.format(new Date());
                             var outFile = getOldCopyDirectory().file(change.getFile().getName()+"."+timestamp+DigestUtils.md5Hex(originalText));
-                            Files.createDirectories(outFile.get().getAsFile().toPath());
+                            Files.createDirectories(outFile.get().getAsFile().toPath().getParent());
                             Files.writeString(outFile.get().getAsFile().toPath(), originalText);
                             Files.writeString(change.getFile().toPath(), finalText[0]);
                         } else {
@@ -210,7 +207,7 @@ public abstract class CheckTask extends DefaultTask {
         return out.toString(StandardCharsets.UTF_8);
     }
 
-    private static final String makeVisible(String text) {
+    private static String makeVisible(String text) {
         return text.replace(' ', '·').replace("\t", "\\t").replace("\r", "");
     }
 

@@ -62,8 +62,8 @@ managedVersioning {
                 gradlew 'Tag Release', 'tagRelease'
                 gradlew 'Build', 'build'
                 push()
-                dependencySubmission()
                 recordVersion 'Record Version', 'version'
+                dependencySubmission()
             }
             gradleJob {
                 name.set 'publishCentral'
