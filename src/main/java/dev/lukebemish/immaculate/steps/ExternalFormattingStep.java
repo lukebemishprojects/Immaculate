@@ -19,11 +19,9 @@ public abstract class ExternalFormattingStep extends AbstractFormattingStep {
     public ExternalFormattingStep(String name, String workflowName, Project project, ObjectFactory objectFactory) {
         super(name);
         this.formatterDependencies = objectFactory.newInstance(FormatterDependencies.class);
-        // We have to use this as some plugins (*ahem* NeoGradle) screw up lazy use of DependencyCollector
-        // TODO: move this back to normal configurations
-        var detached = project.getConfigurations().detachedConfiguration();
-        detached.fromDependencyCollector(formatterDependencies.getRuntime());
-        getFormatterClasspath().from(detached);
+        var runtime = project.getConfigurations().create("immaculate" + capitalize(workflowName) + capitalize(name) + "Runtime");
+        runtime.fromDependencyCollector(formatterDependencies.getRuntime());
+        getFormatterClasspath().from(runtime);
     }
 
     private String capitalize(String str) {
