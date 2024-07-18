@@ -36,11 +36,11 @@ public abstract class ExternalFormattingStep extends AbstractFormattingStep {
     public abstract ConfigurableFileCollection getFormatterClasspath();
 
     @Internal
-    public FormatterDependencies getFormatter() {
+    public FormatterDependencies getDependencies() {
         return formatterDependencies;
     }
 
-    public void formatter(Action<FormatterDependencies> action) {
-        action.execute(getFormatter());
+    public void dependencies(Action<FormatterDependencies> action) {
+        action.execute(getDependencies());
     }
 }

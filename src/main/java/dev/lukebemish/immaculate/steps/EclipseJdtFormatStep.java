@@ -21,7 +21,7 @@ public abstract class EclipseJdtFormatStep extends WrapperFormattingStep {
     @Inject
     public EclipseJdtFormatStep(String name, String workflowName, Project project, ObjectFactory objectFactory, JavaToolchainService javaToolchainService) {
         super(name, workflowName, project, objectFactory, javaToolchainService);
-        this.getFormatter().getRuntime().add("dev.lukebemish.immaculate.wrapper:eclipse-jdt", dep -> {
+        this.getDependencies().getRuntime().add("dev.lukebemish.immaculate.wrapper:eclipse-jdt", dep -> {
             if (ImmaculatePlugin.PLUGIN_VERSION != null) {
                 dep.version(constraint ->
                     constraint.require(ImmaculatePlugin.PLUGIN_VERSION)
@@ -29,8 +29,8 @@ public abstract class EclipseJdtFormatStep extends WrapperFormattingStep {
             }
         });
         this.formatterDependency = objectFactory.property(Dependency.class);
-        formatterDependency.convention(getFormatter().module(MAVEN_PATH + ":" + DEFAULT_VERSION));
-        getFormatter().getRuntime().add(formatterDependency);
+        formatterDependency.convention(getDependencies().module(MAVEN_PATH + ":" + DEFAULT_VERSION));
+        getDependencies().getRuntime().add(formatterDependency);
     }
 
     private static final String MAVEN_PATH = "org.eclipse.jdt:org.eclipse.jdt.core";
@@ -39,13 +39,13 @@ public abstract class EclipseJdtFormatStep extends WrapperFormattingStep {
     private transient final Property<Dependency> formatterDependency;
 
     @Internal
-    protected Property<Dependency> getFormatterDependency() {
+    protected Property<Dependency> getEclipseJdtFormatter() {
         return formatterDependency;
     }
 
     @SuppressWarnings("UnstableApiUsage")
     public void version(String version) {
-        formatterDependency.set(getFormatter().module(MAVEN_PATH + ":" + version));
+        formatterDependency.set(getDependencies().module(MAVEN_PATH + ":" + version));
     }
 
     @Override

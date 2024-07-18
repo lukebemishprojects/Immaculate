@@ -32,7 +32,7 @@ public abstract class WrapperFormattingStep extends ExternalFormattingStep {
         getJavaLauncher().convention(javaToolchainService.launcherFor(spec -> {}));
         this.objectFactory = objectFactory;
         getHideStacktrace().convention(project.getGradle().getStartParameter().getShowStacktrace() == ShowStacktrace.INTERNAL_EXCEPTIONS);
-        this.getFormatter().getRuntime().add("dev.lukebemish.immaculate:wrapper", dep -> {
+        this.getDependencies().getRuntime().add("dev.lukebemish.immaculate:wrapper", dep -> {
             if (ImmaculatePlugin.PLUGIN_VERSION != null) {
                 dep.version(constraint ->
                     constraint.require(ImmaculatePlugin.PLUGIN_VERSION)
