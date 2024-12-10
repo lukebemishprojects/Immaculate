@@ -29,7 +29,6 @@ public abstract class WrapperFormattingStep extends ExternalFormattingStep {
             }
             return null;
         }).flatMap(javaToolchainService::launcherFor).orElse(javaToolchainService.launcherFor(spec -> {})));
-        getJavaLauncher().convention(javaToolchainService.launcherFor(spec -> {}));
         this.objectFactory = objectFactory;
         getHideStacktrace().convention(project.getGradle().getStartParameter().getShowStacktrace() == ShowStacktrace.INTERNAL_EXCEPTIONS);
         this.getDependencies().getRuntime().add("dev.lukebemish.immaculate:wrapper", dep -> {

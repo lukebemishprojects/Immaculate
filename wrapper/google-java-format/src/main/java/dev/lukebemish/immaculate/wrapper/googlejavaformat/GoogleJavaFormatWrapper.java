@@ -29,7 +29,7 @@ public class GoogleJavaFormatWrapper implements Wrapper {
         try {
             int ok = formatter.format(fullArgs);
             if (ok != 0) {
-                throw new RuntimeException("Failed to format " + fileName);
+                throw new RuntimeException("Failed to format " + fileName + ", exit code: " + ok);
             }
         } catch (Exception e) {
             if (e instanceof RuntimeException runtimeException) {
@@ -37,9 +37,10 @@ public class GoogleJavaFormatWrapper implements Wrapper {
             } else {
                 throw new RuntimeException(e);
             }
+        } finally {
+            errWriter.flush();
+            outWriter.flush();
         }
-        errWriter.flush();
-        outWriter.flush();
         return outputStream.toString(StandardCharsets.UTF_8);
     }
 }
