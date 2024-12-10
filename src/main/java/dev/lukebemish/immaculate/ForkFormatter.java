@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ForkFormatter implements FileFormatter {
@@ -123,7 +124,7 @@ public class ForkFormatter implements FileFormatter {
         }
 
         public synchronized CompletableFuture<String> submit(int id, String fileName, String text) throws IOException {
-            if (closed) {
+            if (closed.get()) {
                 throw new IOException("Listener is closed");
             }
             var out = results.computeIfAbsent(id, i -> new CompletableFuture<>());
@@ -138,33 +139,22 @@ public class ForkFormatter implements FileFormatter {
             return out;
         }
 
-        private volatile boolean closed = false;
-
-        private void beginClose(Throwable e) throws IOException {
-            if (this.closed) return;
-            this.closed = true;
-            for (var future : results.values()) {
-                future.completeExceptionally(e);
-            }
-            results.clear();
-
-            socket.shutdownInput();
-        }
-
-        private void finishClose() throws IOException {
-            if (!socket.isClosed()) {
-                output.writeInt(-1);
-                output.flush();
-                socket.close();
-            }
-        }
+        private final AtomicBoolean closed = new AtomicBoolean();
 
         public void shutdown() throws IOException {
             shutdown(new IOException("Execution was interrupted"));
         }
 
-        private synchronized void shutdown(Throwable t) throws IOException {
-            this.beginClose(t);
+        private void shutdown(Throwable t) throws IOException {
+            if (!this.closed.compareAndSet(false, true)) return;
+
+            for (var future : results.values()) {
+                future.completeExceptionally(t);
+            }
+            results.clear();
+
+            socket.shutdownInput();
+
             if (Thread.currentThread() != this) {
                 try {
                     this.join();
@@ -172,15 +162,18 @@ public class ForkFormatter implements FileFormatter {
                     // continue, it's fine
                 }
             }
-            this.finishClose();
+
+            output.writeInt(-1);
+            output.flush();
+            socket.close();
         }
 
         @Override
         public void run() {
             try {
-                if (!closed) {
+                if (!closed.get()) {
                     var input = new DataInputStream(socket.getInputStream());
-                    while (!closed) {
+                    while (!closed.get()) {
                         int id = input.readInt();
                         boolean success = input.readBoolean();
                         if (success) {
