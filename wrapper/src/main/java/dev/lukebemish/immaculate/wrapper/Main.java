@@ -97,19 +97,23 @@ public class Main implements AutoCloseable {
     }
 
     private record Output(DataOutputStream output) {
-        synchronized void writeFailure(int id) throws IOException {
-            output.writeInt(id);
-            output.writeBoolean(false);
-            output.flush();
+        void writeFailure(int id) throws IOException {
+            synchronized (this) {
+                output.writeInt(id);
+                output.writeBoolean(false);
+                output.flush();
+            }
         }
 
-        synchronized void writeSuccess(int id, String result) throws IOException {
-            output.writeInt(id);
-            output.writeBoolean(true);
-            byte[] bytes = result.getBytes(StandardCharsets.UTF_8);
-            output.writeInt(bytes.length);
-            output.write(bytes);
-            output.flush();
+        void writeSuccess(int id, String result) throws IOException {
+            synchronized (this) {
+                output.writeInt(id);
+                output.writeBoolean(true);
+                byte[] bytes = result.getBytes(StandardCharsets.UTF_8);
+                output.writeInt(bytes.length);
+                output.write(bytes);
+                output.flush();
+            }
         }
     }
 }
