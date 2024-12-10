@@ -152,20 +152,25 @@ public class ForkFormatter implements FileFormatter {
         }
 
         private void finishClose() throws IOException {
-            output.writeInt(-1);
-            socket.close();
+            if (!socket.isClosed()) {
+                output.writeInt(-1);
+                output.flush();
+                socket.close();
+            }
         }
 
         public void shutdown() throws IOException {
             shutdown(new IOException("Execution was interrupted"));
         }
 
-        private void shutdown(Throwable t) throws IOException {
+        private synchronized void shutdown(Throwable t) throws IOException {
             this.beginClose(t);
-            try {
-                this.join();
-            } catch (InterruptedException e) {
-                // continue, it's fine
+            if (Thread.currentThread() != this) {
+                try {
+                    this.join();
+                } catch (InterruptedException e) {
+                    // continue, it's fine
+                }
             }
             this.finishClose();
         }
@@ -195,8 +200,12 @@ public class ForkFormatter implements FileFormatter {
                         }
                     }
                 }
-            } catch (EOFException ignored) {
-
+            } catch (EOFException e) {
+                try {
+                    shutdown(e);
+                } catch (IOException ex) {
+                    throw new UncheckedIOException(ex);
+                }
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
