@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -115,7 +116,10 @@ public class Main implements AutoCloseable {
         synchronized void writeSuccess(int id, String result) throws IOException {
             output.writeInt(id);
             output.writeBoolean(true);
-            output.writeUTF(result);
+            // We do not use writeUTF here as it is limited to strings with length less than 65535 bytes
+            var resultBytes = result.getBytes(StandardCharsets.UTF_8);
+            output.writeInt(resultBytes.length);
+            output.write(resultBytes);
             output.flush();
         }
 
@@ -124,7 +128,10 @@ public class Main implements AutoCloseable {
         }
 
         String readUTF() throws IOException {
-            return input.readUTF();
+            // We do not use readUTF here as it is limited to strings with length less than 65535 bytes
+            int length = input.readInt();
+            var bytes = input.readNBytes(length);
+            return new String(bytes, StandardCharsets.UTF_8);
         }
     }
 }

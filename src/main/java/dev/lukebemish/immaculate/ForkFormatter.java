@@ -10,6 +10,7 @@ import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -115,8 +116,13 @@ public class ForkFormatter implements FileFormatter {
 
         synchronized void writeSubmission(int id, String fileName, String text) throws IOException {
             output.writeInt(id);
-            output.writeUTF(fileName);
-            output.writeUTF(text);
+            // We do not use writeUTF here as it is limited to strings with length less than 65535 bytes
+            var fileNameBytes = fileName.getBytes(StandardCharsets.UTF_8);
+            output.writeInt(fileNameBytes.length);
+            output.write(fileNameBytes);
+            var textBytes = text.getBytes(StandardCharsets.UTF_8);
+            output.writeInt(textBytes.length);
+            output.write(textBytes);
             output.flush();
         }
 
@@ -153,7 +159,10 @@ public class ForkFormatter implements FileFormatter {
         }
 
         String readResult() throws IOException {
-            return input.readUTF();
+            // We do not use readUTF here as it is limited to strings with length less than 65535 bytes
+            int length = input.readInt();
+            var bytes = input.readNBytes(length);
+            return new String(bytes, StandardCharsets.UTF_8);
         }
     }
 
