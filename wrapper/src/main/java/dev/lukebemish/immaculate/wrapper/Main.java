@@ -5,7 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.net.ServerSocket;
-import java.nio.charset.StandardCharsets;
+import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -57,29 +57,30 @@ public class Main implements AutoCloseable {
         // This tells the parent process what port we're listening on
         System.out.println(socket.getLocalPort());
         var socket = this.socket.accept();
-        var input = new DataInputStream(socket.getInputStream());
-        var os = new DataOutputStream(socket.getOutputStream());
-        var output = new Output(os);
+        // Communication back to the parent is done through this handle, which ensures synchronization on the output stream.
+        var socketHandle = new SocketHandle(socket);
         while (true) {
-            int id = input.readInt();
+            int id = socketHandle.readId();
             if (id == -1) {
+                // We have been sent a signal to gracefully shutdown, so we stop processing new submissions
                 break;
             }
-            String fileName = new String(input.readNBytes(input.readInt()), StandardCharsets.UTF_8);
-            String text = new String(input.readNBytes(input.readInt()), StandardCharsets.UTF_8);
-            execute(id, fileName, text, output);
+            String fileName = socketHandle.readUTF();
+            String text = socketHandle.readUTF();
+            // Submissions to the child process take the format ID, file name, file contents
+            execute(id, fileName, text, socketHandle);
         }
     }
 
-    private void execute(int id, String fileName, String text, Output output) {
+    private void execute(int id, String fileName, String text, SocketHandle socketHandle) {
         executor.submit(() -> {
             try {
                 String result = wrapper.format(fileName, text);
-                output.writeSuccess(id, result);
+                socketHandle.writeSuccess(id, result);
             } catch (Throwable t) {
                 logException(t);
                 try {
-                    output.writeFailure(id);
+                    socketHandle.writeFailure(id);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -96,24 +97,34 @@ public class Main implements AutoCloseable {
         }
     }
 
-    private record Output(DataOutputStream output) {
-        void writeFailure(int id) throws IOException {
-            synchronized (this) {
-                output.writeInt(id);
-                output.writeBoolean(false);
-                output.flush();
-            }
+    private static final class SocketHandle {
+        private final DataOutputStream output;
+        private final DataInputStream input;
+
+        private SocketHandle(Socket socket) throws IOException {
+            this.output = new DataOutputStream(socket.getOutputStream());
+            this.input = new DataInputStream(socket.getInputStream());
         }
 
-        void writeSuccess(int id, String result) throws IOException {
-            synchronized (this) {
-                output.writeInt(id);
-                output.writeBoolean(true);
-                byte[] bytes = result.getBytes(StandardCharsets.UTF_8);
-                output.writeInt(bytes.length);
-                output.write(bytes);
-                output.flush();
-            }
+        synchronized void writeFailure(int id) throws IOException {
+            output.writeInt(id);
+            output.writeBoolean(false);
+            output.flush();
+        }
+
+        synchronized void writeSuccess(int id, String result) throws IOException {
+            output.writeInt(id);
+            output.writeBoolean(true);
+            output.writeUTF(result);
+            output.flush();
+        }
+
+        int readId() throws IOException {
+            return input.readInt();
+        }
+
+        String readUTF() throws IOException {
+            return input.readUTF();
         }
     }
 }
