@@ -4,6 +4,7 @@ import dev.lukebemish.immaculate.steps.CustomStep;
 import dev.lukebemish.immaculate.steps.EclipseJdtFormatStep;
 import dev.lukebemish.immaculate.steps.GoogleJavaFormatStep;
 import dev.lukebemish.immaculate.steps.LinewiseStep;
+import dev.lukebemish.immaculate.steps.PalantirJavaFormatStep;
 import org.gradle.api.Action;
 import org.gradle.api.Named;
 import org.gradle.api.NamedDomainObjectFactory;
@@ -99,6 +100,10 @@ public abstract class FormattingWorkflow implements Named {
         step("google", GoogleJavaFormatStep.class, action);
     }
 
+    public void palantir(Action<PalantirJavaFormatStep> action) {
+        step("palantir", PalantirJavaFormatStep.class, action);
+    }
+
     public void eclipse(Action<EclipseJdtFormatStep> action) {
         step("eclipse", EclipseJdtFormatStep.class, action);
     }
@@ -134,7 +139,7 @@ public abstract class FormattingWorkflow implements Named {
             registerStepType(clazz);
         }
         for (Class<? extends FormattingStep> clazz : List.of(
-            GoogleJavaFormatStep.class, EclipseJdtFormatStep.class
+            GoogleJavaFormatStep.class, EclipseJdtFormatStep.class, PalantirJavaFormatStep.class
         )) {
             registerFormatterStepType(clazz);
         }
