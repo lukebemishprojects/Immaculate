@@ -10,24 +10,4 @@ public class Test {
 
     @Deprecated
     public void test() {}
-
-    private static void configureResolvedVersionsWithVersionMapping(Project project) {
-        project.getPluginManager()
-            .withPlugin(
-                "maven-publish",
-                plugin -> {
-                    project.getExtensions()
-                        .getByType(PublishingExtension.class)
-                        .getPublications()
-                        .withType(MavenPublication.class)
-                        .configureEach(
-                            publication ->
-                                publication.versionMapping(
-                                    mapping -> {
-                                        mapping.allVariants(
-                                            VariantVersionMappingStrategy
-                                                ::fromResolutionResult);
-                                    }));
-                });
-    }
 }
