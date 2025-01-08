@@ -109,11 +109,13 @@ public abstract class FormattingWorkflow implements Named {
     }
 
     public <T extends FormattingStep> void step(String name, Class<T> type, Action<? super T> action) {
-        steps.addLater(getProject().provider(() -> {
+        Property<FormattingStep> property = getObjects().property(FormattingStep.class);
+        property.set(getProject().provider(() -> {
             T step = createStep(type, name);
             action.execute(step);
             return step;
         }));
+        steps.addLater(property);
     }
 
     public <T extends FormattingStep> void step(String name, Class<T> type) {
@@ -137,6 +139,9 @@ public abstract class FormattingWorkflow implements Named {
 
     @SuppressWarnings("unchecked")
     private <T extends FormattingStep> T createStep(Class<T> clazz, String name) {
+        if (steps.findByName(name) != null) {
+            throw new IllegalArgumentException("Step with name "+name+" already exists");
+        }
         NamedDomainObjectFactory<T> factory = (NamedDomainObjectFactory<T>) factories.get(clazz);
         if (factory == null) {
             throw new IllegalArgumentException("No factory for step type "+clazz);
