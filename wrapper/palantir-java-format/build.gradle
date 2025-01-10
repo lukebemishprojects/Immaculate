@@ -1,0 +1,22 @@
+dependencies {
+    compileOnly 'com.palantir.javaformat:palantir-java-format:2.50.0'
+    implementation project(':wrapper')
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            managedVersioning.publishing.sign(signing, it)
+            managedVersioning.publishing.pom(it, github_repo, license)
+            pom {
+                name = 'Immaculate -- Palantir Java Format Wrapper'
+                description = 'A wrapper around the Palantir java formatter'
+            }
+        }
+    }
+}
+
+tasks.named('publishCentral') {
+    dependsOn tasks.publish
+}
