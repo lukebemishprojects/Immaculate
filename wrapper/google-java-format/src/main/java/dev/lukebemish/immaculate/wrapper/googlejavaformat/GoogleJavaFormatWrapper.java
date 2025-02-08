@@ -18,7 +18,7 @@ public class GoogleJavaFormatWrapper implements Wrapper {
 
     @Override
     public String format(String fileName, String text) {
-        ByteArrayInputStream inStream = new ByteArrayInputStream(text.getBytes());
+        ByteArrayInputStream inStream = new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8));
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintWriter outWriter = new PrintWriter(new BufferedWriter(new OutputStreamWriter(outputStream, StandardCharsets.UTF_8)));
         PrintWriter errWriter = new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.err, StandardCharsets.UTF_8)));
