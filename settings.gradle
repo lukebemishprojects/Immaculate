@@ -1,14 +1,93 @@
 pluginManagement {
     repositories {
         gradlePluginPortal()
-        maven { url 'https://maven.lukebemish.dev/releases/' }
+        maven { url = 'https://maven.lukebemish.dev/releases/' }
     }
 }
 
 plugins {
-    id 'dev.lukebemish.conventions' version '0.1.10'
-    id 'io.github.gradle-nexus.publish-plugin' version '2.0.0' apply false
-    id 'dev.lukebemish.managedversioning' version '1.2.26' apply false
+    id 'dev.lukebemish.conventions' version '0.2.0-beta.2'
+    id 'dev.lukebemish.managedversioning' version '2.0.0-beta.5'
+}
+
+managedVersioning {
+    versionFile.set file('version.properties')
+    versionPRs()
+    versionSnapshots()
+
+    publishing {
+        mavenStaging()
+        mavenSnapshot()
+        mavenPullRequest()
+        mavenCentral()
+    }
+
+    gitHubActions {
+        release {
+            prettyName = 'Release'
+            workflowDispatch = true
+            gradleJob {
+                name.set 'build'
+                buildCache()
+                setupGitUser()
+                readOnly = false
+                gradlew 'Tag Release', 'tagRelease'
+                gradlew 'Build', 'build'
+                push()
+                recordVersion 'Record Version', 'version'
+                dependencySubmission()
+            }
+            gradleJob {
+                name.set 'publishCentral'
+                buildCache()
+                needs.add('build')
+                gradlew 'Publish Central', 'publishCentral', 'closeAndReleaseSonatypeStagingRepository'
+                tag.set('${{needs.build.outputs.version}}')
+                sign()
+                mavenCentral()
+                mavenStaging('github')
+            }
+            gradleJob {
+                name.set 'publishPlugins'
+                buildCache()
+                needs.add('build')
+                gradlew 'Publish Plugins', 'publishPlugins'
+                tag.set('${{needs.build.outputs.version}}')
+                pluginPortal()
+            }
+        }
+        snapshot {
+            prettyName.set 'Snapshot'
+            workflowDispatch.set(true)
+            onBranches.add 'main'
+            gradleJob {
+                name.set 'build'
+                buildCache()
+                cacheReadOnly = false
+                gradlew 'Build', 'build'
+                gradlew 'Publish', 'publish'
+                mavenSnapshot('github')
+            }
+        }
+        build_pr {
+            prettyName.set 'Build PR'
+            pullRequest.set(true)
+            gradleJob {
+                name.set 'build'
+                gradlew 'Build', 'build'
+                gradlew 'Publish', 'publish'
+                pullRequestArtifact()
+            }
+        }
+        publish_pr {
+            prettyName.set 'Publish PR'
+            publishPullRequestAction(
+                'github',
+                "dev/lukebemish/immaculate,dev/lukebemish/immaculate/*,dev/lukebemish/immaculate/wrapper/*",
+                'Build PR'
+            )
+        }
+    }
 }
 
 gradle.lifecycle.beforeProject {
@@ -17,18 +96,6 @@ gradle.lifecycle.beforeProject {
     apply plugin: 'java-library'
     apply plugin: 'maven-publish'
     apply plugin: 'signing'
-    apply plugin: 'dev.lukebemish.managedversioning'
-
-    managedVersioning {
-        versionFile.set rootProject.isolated.projectDirectory.file('version.properties')
-        versionPRs()
-        versionSnapshots()
-    }
-
-    managedVersioning.apply()
-    managedVersioning.publishing.mavenSnapshot(publishing)
-    managedVersioning.publishing.mavenStaging(publishing)
-    managedVersioning.publishing.mavenPullRequest(publishing)
 
     java {
         toolchain.languageVersion.set(JavaLanguageVersion.of(17))

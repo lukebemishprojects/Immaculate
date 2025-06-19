@@ -1,4 +1,11 @@
 {
+    "name": "Build PR",
+    "concurrency": "ci-${{ github.ref }}",
+    "on": {
+        "pull_request": {
+            
+        }
+    },
     "jobs": {
         "build": {
             "runs-on": "ubuntu-22.04",
@@ -8,66 +15,59 @@
                     "run": "echo \"JAVA_HOME=$JAVA_HOME_17_X64\" >> \"$GITHUB_ENV\""
                 },
                 {
+                    "name": "Checkout",
+                    "uses": "actions/checkout@v4",
                     "with": {
                         "fetch-depth": "0",
                         "persist-credentials": "false"
-                    },
-                    "name": "Checkout",
-                    "uses": "actions/checkout@v4"
+                    }
                 },
                 {
                     "name": "Validate Gradle Wrapper",
                     "uses": "gradle/actions/wrapper-validation@v4"
                 },
                 {
+                    "name": "Cache",
+                    "uses": "actions/cache/restore@v4",
                     "with": {
                         "path": "**/.gradle/loom-cache\n**/.gradle/quilt-loom-cache",
                         "key": "${{ runner.os }}-gradle-${{ hashFiles('**/libs.versions.*', '**/*.gradle*', '**/gradle-wrapper.properties') }}",
                         "restore-keys": "${{ runner.os }}-gradle-"
-                    },
-                    "name": "Cache",
-                    "uses": "actions/cache/restore@v4"
+                    }
                 },
                 {
+                    "name": "Setup Gradle",
+                    "uses": "gradle/actions/setup-gradle@v4",
                     "with": {
                         "cache-read-only": true,
                         "gradle-home-cache-cleanup": true
-                    },
-                    "name": "Setup Gradle",
-                    "uses": "gradle/actions/setup-gradle@v4"
+                    }
                 },
                 {
                     "name": "Build",
-                    "run": "./gradlew build",
                     "id": "build",
+                    "run": "./gradlew build",
                     "env": {
                         "PR_NUMBER": "${{ github.event.pull_request.number }}"
                     }
                 },
                 {
                     "name": "Publish",
-                    "run": "./gradlew publish",
                     "id": "publish",
+                    "run": "./gradlew publish",
                     "env": {
                         "PR_NUMBER": "${{ github.event.pull_request.number }}"
                     }
                 },
                 {
+                    "name": "Archive Publishable Artifacts",
+                    "uses": "actions/upload-artifact@v4",
                     "with": {
                         "name": "artifacts",
                         "path": "build/repo"
-                    },
-                    "name": "Archive Publishable Artifacts",
-                    "uses": "actions/upload-artifact@v4"
+                    }
                 }
             ]
-        }
-    },
-    "name": "Build PR",
-    "concurrency": "ci-${{ github.ref }}",
-    "on": {
-        "pull_request": {
-            
         }
     }
 }

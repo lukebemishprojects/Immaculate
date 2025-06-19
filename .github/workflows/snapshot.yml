@@ -1,4 +1,16 @@
 {
+    "name": "Snapshot",
+    "concurrency": "ci-${{ github.ref }}",
+    "on": {
+        "push": {
+            "branches": [
+                "main"
+            ]
+        },
+        "workflow_dispatch": {
+            
+        }
+    },
     "jobs": {
         "build": {
             "runs-on": "ubuntu-22.04",
@@ -8,37 +20,37 @@
                     "run": "echo \"JAVA_HOME=$JAVA_HOME_17_X64\" >> \"$GITHUB_ENV\""
                 },
                 {
+                    "name": "Checkout",
+                    "uses": "actions/checkout@v4",
                     "with": {
                         "fetch-depth": "0",
                         "persist-credentials": "false"
-                    },
-                    "name": "Checkout",
-                    "uses": "actions/checkout@v4"
+                    }
                 },
                 {
                     "name": "Validate Gradle Wrapper",
                     "uses": "gradle/actions/wrapper-validation@v4"
                 },
                 {
+                    "name": "Cache",
+                    "uses": "actions/cache@v4",
                     "with": {
                         "path": "**/.gradle/loom-cache\n**/.gradle/quilt-loom-cache",
                         "key": "${{ runner.os }}-gradle-${{ hashFiles('**/libs.versions.*', '**/*.gradle*', '**/gradle-wrapper.properties') }}",
                         "restore-keys": "${{ runner.os }}-gradle-"
-                    },
-                    "name": "Cache",
-                    "uses": "actions/cache@v4"
+                    }
                 },
                 {
+                    "name": "Setup Gradle",
+                    "uses": "gradle/actions/setup-gradle@v4",
                     "with": {
                         "gradle-home-cache-cleanup": true
-                    },
-                    "name": "Setup Gradle",
-                    "uses": "gradle/actions/setup-gradle@v4"
+                    }
                 },
                 {
                     "name": "Build",
-                    "run": "./gradlew build",
                     "id": "build",
+                    "run": "./gradlew build",
                     "env": {
                         "BUILD_CACHE_PASSWORD": "${{ secrets.BUILD_CACHE_PASSWORD }}",
                         "BUILD_CACHE_USER": "${{ secrets.BUILD_CACHE_USER }}",
@@ -50,8 +62,8 @@
                 },
                 {
                     "name": "Publish",
-                    "run": "./gradlew publish",
                     "id": "publish",
+                    "run": "./gradlew publish",
                     "env": {
                         "BUILD_CACHE_PASSWORD": "${{ secrets.BUILD_CACHE_PASSWORD }}",
                         "BUILD_CACHE_USER": "${{ secrets.BUILD_CACHE_USER }}",
@@ -61,18 +73,6 @@
                         "SNAPSHOT_MAVEN_URL": "https://maven.lukebemish.dev/snapshots/"
                     }
                 }
-            ]
-        }
-    },
-    "name": "Snapshot",
-    "concurrency": "ci-${{ github.ref }}",
-    "on": {
-        "workflow_dispatch": {
-            
-        },
-        "push": {
-            "branches": [
-                "main"
             ]
         }
     }

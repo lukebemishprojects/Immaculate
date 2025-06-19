@@ -5,19 +5,21 @@ plugins {
     alias cLibs.plugins.gradlepublish
 }
 
+def gradleVersion = "8.8"
+
 ['apiElements', 'runtimeElements'].each {
     configurations.named(it).configure {
         attributes {
             attribute(
                     GradlePluginApiVersion.GRADLE_PLUGIN_API_VERSION_ATTRIBUTE,
-                    objects.named(GradlePluginApiVersion, gradle.gradleVersion)
+                    objects.named(GradlePluginApiVersion, gradleVersion)
             )
         }
     }
 }
 
 dependencies {
-    implementation gradleApi()
+    compileOnly "dev.gradleplugins:gradle-api:$gradleVersion"
     implementation 'commons-io:commons-io:2.16.1'
     implementation 'org.eclipse.jgit:org.eclipse.jgit:6.10.0.202406032230-r'
     implementation 'dev.lukebemish:forkedtaskexecutor:0.1.4'
@@ -49,74 +51,3 @@ jar {
 tasks.named('wrapper', Wrapper) {
     distributionType = Wrapper.DistributionType.ALL
 }
-
-managedVersioning {
-    gitHubActions {
-        release {
-            prettyName = 'Release'
-            workflowDispatch = true
-            gradleJob {
-                name.set 'build'
-                buildCache()
-                setupGitUser()
-                readOnly = false
-                gradlew 'Tag Release', 'tagRelease'
-                gradlew 'Build', 'build'
-                push()
-                recordVersion 'Record Version', 'version'
-                dependencySubmission()
-            }
-            gradleJob {
-                name.set 'publishCentral'
-                buildCache()
-                needs.add('build')
-                gradlew 'Publish Central', 'publishCentral', 'closeAndReleaseSonatypeStagingRepository'
-                tag.set('${{needs.build.outputs.version}}')
-                sign()
-                mavenCentral()
-                mavenStaging('github')
-            }
-            gradleJob {
-                name.set 'publishPlugins'
-                buildCache()
-                needs.add('build')
-                gradlew 'Publish Plugins', 'publishPlugins'
-                tag.set('${{needs.build.outputs.version}}')
-                pluginPortal()
-            }
-        }
-        snapshot {
-            prettyName.set 'Snapshot'
-            workflowDispatch.set(true)
-            onBranches.add 'main'
-            gradleJob {
-                name.set 'build'
-                buildCache()
-                cacheReadOnly = false
-                gradlew 'Build', 'build'
-                gradlew 'Publish', 'publish'
-                mavenSnapshot('github')
-            }
-        }
-        build_pr {
-            prettyName.set 'Build PR'
-            pullRequest.set(true)
-            gradleJob {
-                name.set 'build'
-                gradlew 'Build', 'build'
-                gradlew 'Publish', 'publish'
-                pullRequestArtifact()
-            }
-        }
-        publish_pr {
-            prettyName.set 'Publish PR'
-            publishPullRequestAction(
-                'github',
-                "dev/lukebemish/immaculate,dev/lukebemish/immaculate/*,dev/lukebemish/immaculate/wrapper/*",
-                'Build PR'
-            )
-        }
-    }
-}
-
-managedVersioning.publishing.mavenCentral()
