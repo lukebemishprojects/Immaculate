@@ -11,6 +11,7 @@ import org.gradle.api.DefaultTask;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.FileType;
+import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
@@ -60,6 +61,12 @@ public abstract class CheckTask extends DefaultTask {
     @Optional
     public abstract Property<String> getToggleOn();
 
+    @Internal
+    public abstract Property<Boolean> getTruncateExceptions();
+
+    @Internal
+    public abstract RegularFileProperty getReportIssuesRootPath();
+
     private record NamedFormatter(String name, FileFormatter formatter) {}
 
     private static final DateFormat OLD_FILE_DATE_FORMAT = new SimpleDateFormat("yyyyMMddHHmmss");
@@ -96,7 +103,7 @@ public abstract class CheckTask extends DefaultTask {
                                     parts.add(text.substring(startIndex, nextIndex) + suffix);
                                     index = nextIndex;
                                 } else {
-                                    throw new RuntimeException("Mismatched toggle in file "+change.getFile().getName());
+                                    throw new FormattingException(change.getFile(), "Mismatched toggle");
                                 }
                             } else {
                                 parts.add(text.substring(oldIndex));
@@ -114,7 +121,7 @@ public abstract class CheckTask extends DefaultTask {
                         try {
                             newText = formatter.formatter.format(change.getFile().getName(), finalText[0]);
                         } catch (Exception e) {
-                            throw new RuntimeException("Error checking file "+change.getFile().getName()+" at step "+formatter.name(), e);
+                            throw new FormattingException(change.getFile(), "Error at step "+formatter.name(), e);
                         }
                         if (newText != null && !finalText[0].equals(newText)) {
                             finalText[0] = newText;
@@ -130,17 +137,17 @@ public abstract class CheckTask extends DefaultTask {
                         for (int i = 0; i < excluded.size(); i++) {
                             int start = finalText[0].indexOf(getToggleOff().get() + ':' + i);
                             if (start == -1) {
-                                throw new RuntimeException("Could not recover toggle block in file "+change.getFile().getName());
+                                throw new FormattingException(change.getFile(), "Could not recover toggle block");
                             }
                             int end = finalText[0].indexOf(getToggleOn().get() + ':' + i, start);
                             if (end == -1) {
-                                throw new RuntimeException("Could not recover toggle block in file "+change.getFile().getName());
+                                throw new FormattingException(change.getFile(), "Could not recover toggle block");
                             }
                             int startIndex = start + getToggleOff().get().length() + (":"+i).length();
                             int nextIndex = end + getToggleOn().get().length() + (":"+i).length();
                             String inner = finalText[0].substring(startIndex, end);
                             if (inner.contains(getToggleOff().get()) || inner.contains(getToggleOn().get())) {
-                                throw new RuntimeException("Mismatched toggle in file "+change.getFile().getName());
+                                throw new FormattingException(change.getFile(), "Mismatched toggle");
                             }
                             finalText[0] = finalText[0].substring(0, start) + getToggleOff().get() + excluded.get(i) + finalText[0].substring(nextIndex);
                         }
@@ -154,7 +161,7 @@ public abstract class CheckTask extends DefaultTask {
                             Files.writeString(outFile.get().getAsFile().toPath(), originalText);
                             Files.writeString(change.getFile().toPath(), finalText[0]);
                         } else {
-                            throw new RuntimeException("File "+change.getFile().getName()+" does not match formatting:\n"+diff(originalText, finalText[0]));
+                            throw new FormattingException(change.getFile(), "File does not match formatting", diff(originalText, finalText[0]));
                         }
                     }
                 } catch (Exception e) {
@@ -173,17 +180,23 @@ public abstract class CheckTask extends DefaultTask {
         }
         if (!exceptions.isEmpty()) {
             RuntimeException exception;
-            if (exceptions.size() > 5) {
-                exception = new RuntimeException("Exceptions occurred during formatting (first 5 shown; others truncated...");
+            if (exceptions.size() > 5 && getTruncateExceptions().get()) {
+                exception = new RuntimeException("Exceptions occurred during formatting; see log for details (first 5 shown; others truncated...");
                 for (int i = 0; i < 5; i++) {
-                    System.err.println(exceptions.get(i));
-                    exception.addSuppressed(exceptions.get(i));
+                    if (exceptions.get(i) instanceof FormattingException formattingException) {
+                        System.err.println(formattingException.format(getReportIssuesRootPath().getAsFile().getOrNull()));
+                    } else {
+                        System.err.println(exceptions.get(i));
+                    }
                 }
             } else {
-                exception = new RuntimeException("Exceptions occurred during formatting");
+                exception = new RuntimeException("Exceptions occurred during formatting; see log for details");
                 exceptions.forEach(e -> {
-                    System.err.println(e);
-                    exception.addSuppressed(e);
+                    if (e instanceof FormattingException formattingException) {
+                        System.err.println(formattingException.format(getReportIssuesRootPath().getAsFile().getOrNull()));
+                    } else {
+                        System.err.println(e);
+                    }
                 });
             }
             throw exception;
@@ -215,6 +228,7 @@ public abstract class CheckTask extends DefaultTask {
         getOutputs().upToDateWhen(t -> true);
         getApplyFixes().convention(false);
         getOldCopyDirectory().convention(getProject().getLayout().getBuildDirectory().dir("immaculate/"+getName()));
+        getTruncateExceptions().convention(true);
     }
 
     protected void from(FormattingWorkflow workflow) {
@@ -222,5 +236,7 @@ public abstract class CheckTask extends DefaultTask {
         this.getFiles().from(workflow.getFiles());
         this.getToggleOff().set(workflow.getToggleOff());
         this.getToggleOn().set(workflow.getToggleOn());
+        getTruncateExceptions().set(workflow.getTruncateExceptions());
+        getReportIssuesRootPath().set(workflow.getReportIssuesRootPath());
     }
 }
