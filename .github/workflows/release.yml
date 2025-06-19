@@ -139,7 +139,7 @@
                 {
                     "name": "Publish Central",
                     "id": "publish_central",
-                    "run": "./gradlew publishCentral closeAndReleaseSonatypeStagingRepository",
+                    "run": "./gradlew publishCentral",
                     "env": {
                         "BUILD_CACHE_PASSWORD": "${{ secrets.BUILD_CACHE_PASSWORD }}",
                         "BUILD_CACHE_USER": "${{ secrets.BUILD_CACHE_USER }}",

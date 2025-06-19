@@ -3,6 +3,8 @@ dependencies {
     implementation project(':wrapper')
 }
 
+managedVersioning.mavenCentralUseBundle()
+
 publishing {
     publications {
         mavenJava(MavenPublication) {

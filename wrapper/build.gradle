@@ -6,6 +6,8 @@ dependencies {
     }
 }
 
+managedVersioning.mavenCentralUseBundle()
+
 publishing {
     publications {
         mavenJava(MavenPublication) {

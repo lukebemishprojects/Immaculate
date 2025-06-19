@@ -19,7 +19,7 @@ managedVersioning {
         mavenStaging()
         mavenSnapshot()
         mavenPullRequest()
-        mavenCentral()
+        mavenCentralMakeBundle()
     }
 
     gitHubActions {
@@ -43,7 +43,7 @@ managedVersioning {
                 name.set 'publishCentral'
                 buildCache()
                 needs.add('build')
-                gradlew 'Publish Central', 'publishCentral', 'closeAndReleaseSonatypeStagingRepository'
+                gradlew 'Publish Central', 'publishCentral'
                 tag.set('${{needs.build.outputs.version}}')
                 sign()
                 mavenCentral()
