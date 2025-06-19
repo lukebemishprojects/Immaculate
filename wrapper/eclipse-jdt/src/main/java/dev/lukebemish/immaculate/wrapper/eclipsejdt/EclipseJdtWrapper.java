@@ -1,6 +1,6 @@
 package dev.lukebemish.immaculate.wrapper.eclipsejdt;
 
-import dev.lukebemish.immaculate.wrapper.Wrapper;
+import dev.lukebemish.immaculate.wrapper.WrapperTask;
 import org.eclipse.jdt.core.formatter.CodeFormatter;
 import org.eclipse.jdt.internal.formatter.DefaultCodeFormatter;
 import org.eclipse.jface.text.BadLocationException;
@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class EclipseJdtWrapper implements Wrapper {
+public class EclipseJdtWrapper extends WrapperTask {
     private final File configFile;
 
     public EclipseJdtWrapper(String[] args) {

@@ -16,14 +16,10 @@ public abstract class ForkFormatterSpec {
 
     public abstract Property<Boolean> getHideStacktrace();
 
-    public abstract Property<String> getWrapperMainClass();
-
     public abstract ListProperty<String> getJvmArgs();
 
     public abstract ListProperty<String> getProgramArgs();
 
     @Inject
-    public ForkFormatterSpec() {
-        getWrapperMainClass().convention("dev.lukebemish.immaculate.wrapper.Main");
-    }
+    public ForkFormatterSpec() {}
 }

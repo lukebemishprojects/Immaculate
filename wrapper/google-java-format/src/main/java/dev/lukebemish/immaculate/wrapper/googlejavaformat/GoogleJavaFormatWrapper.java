@@ -2,6 +2,7 @@ package dev.lukebemish.immaculate.wrapper.googlejavaformat;
 
 import com.google.googlejavaformat.java.Main;
 import dev.lukebemish.immaculate.wrapper.Wrapper;
+import dev.lukebemish.immaculate.wrapper.WrapperTask;
 
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -10,7 +11,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 
-public class GoogleJavaFormatWrapper implements Wrapper {
+public class GoogleJavaFormatWrapper extends WrapperTask {
     private final String[] args;
     public GoogleJavaFormatWrapper(String[] args) {
         this.args = args;

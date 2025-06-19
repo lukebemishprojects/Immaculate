@@ -20,6 +20,7 @@ dependencies {
     implementation gradleApi()
     implementation 'commons-io:commons-io:2.16.1'
     implementation 'org.eclipse.jgit:org.eclipse.jgit:6.10.0.202406032230-r'
+    implementation 'dev.lukebemish:forkedtaskexecutor:0.1.4'
 }
 
 gradlePlugin {
