@@ -1,7 +1,6 @@
 package dev.lukebemish.immaculate.wrapper.googlejavaformat;
 
 import com.google.googlejavaformat.java.Main;
-import dev.lukebemish.immaculate.wrapper.Wrapper;
 import dev.lukebemish.immaculate.wrapper.WrapperTask;
 
 import java.io.BufferedWriter;
