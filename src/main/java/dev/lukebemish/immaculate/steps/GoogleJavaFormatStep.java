@@ -7,7 +7,6 @@ import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Internal;
-import org.gradle.jvm.toolchain.JavaToolchainService;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -15,8 +14,8 @@ import java.util.List;
 public abstract class GoogleJavaFormatStep extends WrapperFormattingStep {
     @SuppressWarnings("UnstableApiUsage")
     @Inject
-    public GoogleJavaFormatStep(String name, String workflowName, Project project, ObjectFactory objectFactory, JavaToolchainService javaToolchainService) {
-        super(name, workflowName, project, objectFactory, javaToolchainService);
+    public GoogleJavaFormatStep(String name, String workflowName, Project project, ObjectFactory objectFactory) {
+        super(name, workflowName, project, objectFactory);
         this.getDependencies().getRuntime().add("dev.lukebemish.immaculate.wrapper:google-java-format", dep -> {
             if (ImmaculatePlugin.PLUGIN_VERSION != null) {
                 dep.version(constraint ->

@@ -12,15 +12,14 @@ import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
-import org.gradle.jvm.toolchain.JavaToolchainService;
 
 import javax.inject.Inject;
 
 public abstract class EclipseJdtFormatStep extends WrapperFormattingStep {
     @SuppressWarnings("UnstableApiUsage")
     @Inject
-    public EclipseJdtFormatStep(String name, String workflowName, Project project, ObjectFactory objectFactory, JavaToolchainService javaToolchainService) {
-        super(name, workflowName, project, objectFactory, javaToolchainService);
+    public EclipseJdtFormatStep(String name, String workflowName, Project project, ObjectFactory objectFactory) {
+        super(name, workflowName, project, objectFactory);
         this.getDependencies().getRuntime().add("dev.lukebemish.immaculate.wrapper:eclipse-jdt", dep -> {
             if (ImmaculatePlugin.PLUGIN_VERSION != null) {
                 dep.version(constraint ->
