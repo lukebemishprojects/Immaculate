@@ -9,7 +9,6 @@ import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Internal;
-import org.gradle.jvm.toolchain.JavaToolchainService;
 
 public abstract class PalantirJavaFormatStep extends WrapperFormattingStep {
 
@@ -24,8 +23,8 @@ public abstract class PalantirJavaFormatStep extends WrapperFormattingStep {
 
     @SuppressWarnings("UnstableApiUsage")
     @Inject
-    public PalantirJavaFormatStep(final String name, final String workflowName, final Project project, final ObjectFactory objectFactory, final JavaToolchainService javaToolchainService) {
-        super(name, workflowName, project, objectFactory, javaToolchainService);
+    public PalantirJavaFormatStep(final String name, final String workflowName, final Project project, final ObjectFactory objectFactory) {
+        super(name, workflowName, project, objectFactory);
         this.getDependencies().getRuntime().add("dev.lukebemish.immaculate.wrapper:palantir-java-format", dep -> {
             if (ImmaculatePlugin.PLUGIN_VERSION != null) {
                 dep.version(constraint ->
