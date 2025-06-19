@@ -18,7 +18,3 @@ publishing {
         }
     }
 }
-
-tasks.named('publishCentral') {
-    dependsOn tasks.publish
-}

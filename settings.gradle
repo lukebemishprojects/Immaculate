@@ -43,7 +43,7 @@ managedVersioning {
                 name.set 'publishCentral'
                 buildCache()
                 needs.add('build')
-                gradlew 'Publish Central', 'publishCentral'
+                gradlew 'Publish Central', 'publish'
                 tag.set('${{needs.build.outputs.version}}')
                 sign()
                 mavenCentral()
