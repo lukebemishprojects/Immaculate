@@ -101,7 +101,6 @@ gradle.lifecycle.beforeProject {
 
     apply plugin: 'java-library'
     apply plugin: 'maven-publish'
-    apply plugin: 'signing'
 
     java {
         toolchain.languageVersion.set(JavaLanguageVersion.of(17))
@@ -120,6 +119,12 @@ gradle.lifecycle.beforeProject {
     tasks.withType(Sign).configureEach {
         // Gradle broke something in 8.8 here, and now you can't publish plugins to other mavens if signing is disabled...
         enabled System.getenv('GPG_KEY') !== null
+    }
+
+    publishing {
+        publications.configureEach {
+            managedVersioning.sign(signing, it)
+        }
     }
 }
 

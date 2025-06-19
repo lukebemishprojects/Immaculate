@@ -9,7 +9,6 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
             from components.java
-            managedVersioning.sign(signing, it)
             managedVersioning.pom(it, github_repo, license)
             pom {
                 name = 'Immaculate -- Palantir Java Format Wrapper'
