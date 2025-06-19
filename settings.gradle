@@ -27,6 +27,7 @@ managedVersioning {
             prettyName = 'Release'
             workflowDispatch = true
             gradleJob {
+                javaVersion.set '21'
                 name.set 'build'
                 buildCache()
                 setupGitUser()
@@ -38,6 +39,7 @@ managedVersioning {
                 dependencySubmission()
             }
             gradleJob {
+                javaVersion.set '21'
                 name.set 'publishCentral'
                 buildCache()
                 needs.add('build')
@@ -48,6 +50,7 @@ managedVersioning {
                 mavenStaging('github')
             }
             gradleJob {
+                javaVersion.set '21'
                 name.set 'publishPlugins'
                 buildCache()
                 needs.add('build')
@@ -61,6 +64,7 @@ managedVersioning {
             workflowDispatch.set(true)
             onBranches.add 'main'
             gradleJob {
+                javaVersion.set '21'
                 name.set 'build'
                 buildCache()
                 cacheReadOnly = false
@@ -73,6 +77,7 @@ managedVersioning {
             prettyName.set 'Build PR'
             pullRequest.set(true)
             gradleJob {
+                javaVersion.set '21'
                 name.set 'build'
                 gradlew 'Build', 'build'
                 gradlew 'Publish', 'publish'
