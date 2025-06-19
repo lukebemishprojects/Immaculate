@@ -3,6 +3,7 @@ package dev.lukebemish.immaculate;
 import dev.lukebemish.immaculate.steps.CustomStep;
 import dev.lukebemish.immaculate.steps.EclipseJdtFormatStep;
 import dev.lukebemish.immaculate.steps.GoogleJavaFormatStep;
+import dev.lukebemish.immaculate.steps.ImportOrderStep;
 import dev.lukebemish.immaculate.steps.LinewiseStep;
 import dev.lukebemish.immaculate.steps.PalantirJavaFormatStep;
 import org.gradle.api.Action;
@@ -112,6 +113,10 @@ public abstract class FormattingWorkflow implements Named {
         linewise("noTrailingSpaces", String::stripTrailing);
     }
 
+    public void importOrder(Action<ImportOrderStep> action) {
+        step("importOrder", ImportOrderStep.class, action);
+    }
+
     public void custom(String name, UnaryOperator<String> customAction) {
         step(name, CustomStep.class, it -> it.getAction().set(customAction));
     }
@@ -134,7 +139,7 @@ public abstract class FormattingWorkflow implements Named {
 
     public FormattingWorkflow() {
         for (Class<? extends FormattingStep> clazz : List.of(
-            LinewiseStep.class, CustomStep.class
+            LinewiseStep.class, CustomStep.class, ImportOrderStep.class
         )) {
             registerStepType(clazz);
         }

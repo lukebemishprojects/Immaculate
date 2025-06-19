@@ -19,7 +19,10 @@ immaculate {
         java()
         trailingNewline()
         noTabs()
-        googleFixImports()
+        googleRemoveUnusedImports()
+        importOrder {
+            config = file('ordering.importorder')
+        }
         toggleOff = 'spotless:off'
         toggleOn = 'spotless:on'
         /*eclipse {

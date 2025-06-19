@@ -21,7 +21,6 @@ public abstract class PalantirJavaFormatStep extends WrapperFormattingStep {
     );
     private final transient Property<Dependency> formatterDependency;
 
-    @SuppressWarnings("UnstableApiUsage")
     @Inject
     public PalantirJavaFormatStep(final String name, final String workflowName, final Project project, final ObjectFactory objectFactory) {
         super(name, workflowName, project, objectFactory);
@@ -42,7 +41,6 @@ public abstract class PalantirJavaFormatStep extends WrapperFormattingStep {
         return this.formatterDependency;
     }
 
-    @SuppressWarnings("UnstableApiUsage")
     public void version(final String version) {
         this.formatterDependency.set(this.getDependencies().module(MAVEN_PATH + ":" + version));
     }

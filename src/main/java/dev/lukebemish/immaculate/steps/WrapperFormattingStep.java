@@ -17,7 +17,6 @@ import org.gradle.jvm.toolchain.JavaLauncher;
 public abstract class WrapperFormattingStep extends ExternalFormattingStep {
     private final ObjectFactory objectFactory;
 
-    @SuppressWarnings("UnstableApiUsage")
     public WrapperFormattingStep(String name, String workflowName, Project project, ObjectFactory objectFactory) {
         super(name, workflowName, project, objectFactory);
         this.objectFactory = objectFactory;

@@ -16,7 +16,6 @@ import org.gradle.api.tasks.PathSensitivity;
 import javax.inject.Inject;
 
 public abstract class EclipseJdtFormatStep extends WrapperFormattingStep {
-    @SuppressWarnings("UnstableApiUsage")
     @Inject
     public EclipseJdtFormatStep(String name, String workflowName, Project project, ObjectFactory objectFactory) {
         super(name, workflowName, project, objectFactory);
@@ -42,7 +41,6 @@ public abstract class EclipseJdtFormatStep extends WrapperFormattingStep {
         return formatterDependency;
     }
 
-    @SuppressWarnings("UnstableApiUsage")
     public void version(String version) {
         formatterDependency.set(getDependencies().module(MAVEN_PATH + ":" + version));
     }

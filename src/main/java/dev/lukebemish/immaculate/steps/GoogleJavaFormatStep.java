@@ -12,7 +12,6 @@ import javax.inject.Inject;
 import java.util.List;
 
 public abstract class GoogleJavaFormatStep extends WrapperFormattingStep {
-    @SuppressWarnings("UnstableApiUsage")
     @Inject
     public GoogleJavaFormatStep(String name, String workflowName, Project project, ObjectFactory objectFactory) {
         super(name, workflowName, project, objectFactory);
@@ -38,7 +37,6 @@ public abstract class GoogleJavaFormatStep extends WrapperFormattingStep {
         return formatterDependency;
     }
 
-    @SuppressWarnings("UnstableApiUsage")
     public void version(String version) {
         formatterDependency.set(getDependencies().module(MAVEN_PATH + ":" + version));
     }
