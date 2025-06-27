@@ -17,12 +17,12 @@ immaculate {
 
     workflows.register('java') {
         java()
-        trailingNewline()
         noTabs()
         googleRemoveUnusedImports()
         importOrder {
             config = file('ordering.importorder')
         }
+        trailingNewline()
         toggleOff = 'spotless:off'
         toggleOn = 'spotless:on'
         /*eclipse {

@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -53,7 +52,6 @@ public abstract class ImportOrderStep extends AbstractFormattingStep {
         var pattern = Pattern.compile("^import\\s+([^\\s;]+)");
 
         return (fileName, text) -> {
-            var scanner = new Scanner(text);
             int firstImportLine = -1;
             int lastImportLine = -1;
             int lineNumber = -1;
@@ -63,9 +61,10 @@ public abstract class ImportOrderStep extends AbstractFormattingStep {
 
             List<ImportInfo> imports = new ArrayList<>();
 
-            while (scanner.hasNext()) {
+            var lines = text.lines().toList();
+
+            for (var line : lines) {
                 lineNumber++;
-                String line = scanner.nextLine();
 
                 String rest = line;
                 int idx = 0;
@@ -114,8 +113,6 @@ public abstract class ImportOrderStep extends AbstractFormattingStep {
                 }
             }
 
-            scanner.close();
-
             var groups = imports.stream().collect(Collectors.groupingBy(info -> {
                 int longestMatch = -1;
                 int longestMatchIdx = ordering.size();
@@ -145,11 +142,9 @@ public abstract class ImportOrderStep extends AbstractFormattingStep {
             ).toList();
 
             var out = new StringBuilder();
-            scanner = new Scanner(text);
             lineNumber = -1;
-            while (scanner.hasNext()) {
+            for (var line : lines) {
                 lineNumber++;
-                var line = scanner.nextLine();
 
                 if (lineNumber < firstImportLine || lineNumber > lastImportLine) {
                     if (lineNumber > 0) {
