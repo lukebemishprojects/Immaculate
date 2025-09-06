@@ -16,6 +16,7 @@ import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.SourceSetContainer;
+import org.gradle.api.tasks.util.PatternFilterable;
 
 import javax.inject.Inject;
 import java.util.HashMap;
@@ -39,11 +40,33 @@ public abstract class FormattingWorkflow implements Named {
     public abstract RegularFileProperty getReportIssuesRootPath();
 
     public void java() {
-        SourceSetContainer sourceSets = getProject().getExtensions().getByType(SourceSetContainer.class);
-        ConfigurableFileCollection sourceDirs = getProject().files();
-        sourceSets.configureEach(it -> sourceDirs.from(it.getAllSource()));
+        java(it -> {});
+    }
 
-        getFiles().from(sourceDirs.filter(it -> it.getName().endsWith(".java")));
+    public void java(Action<PatternFilterable> action) {
+        ConfigurableFileCollection sourceFiles = getSourceFiles(action);
+
+        getFiles().from(sourceFiles.filter(it -> it.getName().endsWith(".java")));
+    }
+
+    private ConfigurableFileCollection getSourceFiles(Action<PatternFilterable> action) {
+        SourceSetContainer sourceSets = getProject().getExtensions().getByType(SourceSetContainer.class);
+        ConfigurableFileCollection sourceFiles = getProject().files();
+        sourceSets.configureEach(it -> {
+            var tree = it.getAllSource().matching(action);
+            sourceFiles.from(tree);
+        });
+        return sourceFiles;
+    }
+
+    public void sources() {
+        sources(it -> {});
+    }
+
+    public void sources(Action<PatternFilterable> action) {
+        ConfigurableFileCollection sourceFiles = getSourceFiles(action);
+
+        getFiles().from(sourceFiles);
     }
 
     public void linewise(String name, UnaryOperator<String> customAction) {
