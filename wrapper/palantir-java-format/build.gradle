@@ -1,5 +1,5 @@
 dependencies {
-    compileOnly 'com.palantir.javaformat:palantir-java-format:2.50.0'
+    compileOnly 'com.palantir.javaformat:palantir-java-format:2.83.0'
     implementation project(':wrapper')
 }
 
