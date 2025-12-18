@@ -20,7 +20,7 @@ def gradleVersion = "8.8"
 
 dependencies {
     compileOnly "dev.gradleplugins:gradle-api:$gradleVersion"
-    implementation 'commons-io:commons-io:2.16.1'
+    implementation 'commons-io:commons-io:2.21.0'
     implementation 'org.eclipse.jgit:org.eclipse.jgit:7.3.0.202506031305-r'
     implementation 'dev.lukebemish:forkedtaskexecutor:0.1.4'
 }
