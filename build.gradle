@@ -5,7 +5,7 @@ plugins {
     alias cLibs.plugins.gradlepublish
 }
 
-def gradleVersion = "8.8"
+def gradleVersion = "8.11.1"
 
 ['apiElements', 'runtimeElements'].each {
     configurations.named(it).configure {
