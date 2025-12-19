@@ -1,5 +1,5 @@
 dependencies {
-    compileOnly 'com.google.googlejavaformat:google-java-format:1.33.0'
+    compileOnly libs.google.java.format
     implementation project(':wrapper')
 }
 

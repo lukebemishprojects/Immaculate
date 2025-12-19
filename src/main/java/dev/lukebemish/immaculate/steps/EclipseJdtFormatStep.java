@@ -27,12 +27,11 @@ public abstract class EclipseJdtFormatStep extends WrapperFormattingStep {
             }
         });
         this.formatterDependency = objectFactory.property(Dependency.class);
-        formatterDependency.convention(getDependencies().module(MAVEN_PATH + ":" + DEFAULT_VERSION));
+        formatterDependency.convention(getDependencies().module(MAVEN_PATH + ":" + DefaultVersions.ECLIPSE_JDT));
         getDependencies().getRuntime().add(formatterDependency);
     }
 
     private static final String MAVEN_PATH = "org.eclipse.jdt:org.eclipse.jdt.core";
-    private static final String DEFAULT_VERSION = "3.38.0";
 
     private transient final Property<Dependency> formatterDependency;
 

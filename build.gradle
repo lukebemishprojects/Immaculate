@@ -40,6 +40,16 @@ gradlePlugin {
     }
 }
 
+processResources {
+    filesMatching('dev/lukebemish/immaculate/default-versions.properties') {
+        expand([
+            'google-java-format': libs.versions.google.java.format.get(),
+            'palantir-java-format': libs.versions.palantir.java.format.get(),
+            'eclipse-jdt': libs.versions.eclipse.jdt.get()
+        ])
+    }
+}
+
 jar {
     manifest {
         attributes(

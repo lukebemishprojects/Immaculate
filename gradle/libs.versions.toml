@@ -1,0 +1,11 @@
+[versions]
+
+google-java-format="1.33.0"
+palantir-java-format="2.83.0"
+eclipse-jdt="3.44.0"
+
+[libraries]
+
+google-java-format={ group = "com.google.googlejavaformat", name = "google-java-format", version.ref = "google-java-format" }
+palantir-java-format={ group = "com.palantir.javaformat", name = "palantir-java-format", version.ref = "palantir-java-format" }
+eclipse-jdt={ group = "org.eclipse.jdt", name = "org.eclipse.jdt.core", version.ref = "eclipse-jdt" }

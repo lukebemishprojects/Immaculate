@@ -13,7 +13,6 @@ import org.gradle.api.tasks.Internal;
 public abstract class PalantirJavaFormatStep extends WrapperFormattingStep {
 
     private static final String MAVEN_PATH = "com.palantir.javaformat:palantir-java-format";
-    private static final String DEFAULT_VERSION = "2.50.0";
     private static final List<String> GOOGLE_JAVA_FORMAT_ADD_EXPORTS = List.of(
         "jdk.compiler/com.sun.tools.javac.api", "jdk.compiler/com.sun.tools.javac.code",
         "jdk.compiler/com.sun.tools.javac.file", "jdk.compiler/com.sun.tools.javac.parser",
@@ -32,7 +31,7 @@ public abstract class PalantirJavaFormatStep extends WrapperFormattingStep {
             }
         });
         this.formatterDependency = objectFactory.property(Dependency.class);
-        this.formatterDependency.convention(this.getDependencies().module(MAVEN_PATH + ":" + DEFAULT_VERSION));
+        this.formatterDependency.convention(this.getDependencies().module(MAVEN_PATH + ":" + DefaultVersions.PALANTIR_JAVA_FORMAT));
         this.getDependencies().getRuntime().add(this.formatterDependency);
     }
 

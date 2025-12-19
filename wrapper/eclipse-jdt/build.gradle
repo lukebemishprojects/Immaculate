@@ -1,5 +1,5 @@
 dependencies {
-    compileOnly 'org.eclipse.jdt:org.eclipse.jdt.core:3.44.0'
+    compileOnly libs.eclipse.jdt
     implementation project(':wrapper')
 }
 

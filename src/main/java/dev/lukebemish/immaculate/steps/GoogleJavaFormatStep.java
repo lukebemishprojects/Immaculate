@@ -23,12 +23,11 @@ public abstract class GoogleJavaFormatStep extends WrapperFormattingStep {
             }
         });
         this.formatterDependency = objectFactory.property(Dependency.class);
-        formatterDependency.convention(getDependencies().module(MAVEN_PATH + ":" + DEFAULT_VERSION));
+        formatterDependency.convention(getDependencies().module(MAVEN_PATH + ":" + DefaultVersions.GOOGLE_JAVA_FORMAT));
         getDependencies().getRuntime().add(formatterDependency);
     }
 
     private static final String MAVEN_PATH = "com.google.googlejavaformat:google-java-format";
-    private static final String DEFAULT_VERSION = "1.22.0";
 
     private transient final Property<Dependency> formatterDependency;
 
