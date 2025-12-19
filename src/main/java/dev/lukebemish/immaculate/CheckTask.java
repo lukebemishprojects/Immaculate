@@ -183,25 +183,25 @@ public abstract class CheckTask extends DefaultTask {
             if (exceptions.size() > 5 && getTruncateExceptions().get()) {
                 exception = new RuntimeException("Exceptions occurred during formatting; see log for details (first 5 shown; others truncated...");
                 for (int i = 0; i < 5; i++) {
-                    if (exceptions.get(i) instanceof FormattingException formattingException) {
-                        System.err.println(formattingException.format(getReportIssuesRootPath().getAsFile().getOrNull()));
-                    } else {
-                        System.err.println(exceptions.get(i));
-                    }
+                    printFormattingException(exceptions.get(i));
                 }
+                exceptions.forEach(exception::addSuppressed);
             } else {
                 exception = new RuntimeException("Exceptions occurred during formatting; see log for details");
-                exceptions.forEach(e -> {
-                    if (e instanceof FormattingException formattingException) {
-                        System.err.println(formattingException.format(getReportIssuesRootPath().getAsFile().getOrNull()));
-                    } else {
-                        System.err.println(e);
-                    }
-                });
+                exceptions.forEach(this::printFormattingException);
+                exceptions.forEach(exception::addSuppressed);
             }
             throw exception;
         }
 
+    }
+
+    private void printFormattingException(Exception e) {
+        if (e instanceof FormattingException formattingException) {
+            System.out.println(formattingException.format(getReportIssuesRootPath().getAsFile().getOrNull()));
+        } else {
+            System.err.println(e);
+        }
     }
 
     private static String diff(String oldString, String newString) throws IOException {

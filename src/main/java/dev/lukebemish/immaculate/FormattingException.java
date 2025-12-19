@@ -27,11 +27,26 @@ public class FormattingException extends RuntimeException {
     }
 
     public String format(File root) {
-        return "Issue formatting file " + (root != null ? root.toPath().relativize(file.toPath()) : file.getName()) + "\n" + super.getMessage() + (diff == null ? "" : "\n"+diff);
+        return format(root, false);
+    }
+
+    private String format(File root, boolean singleLine) {
+        return "Issue formatting file " + (root != null ? root.toPath().relativize(file.toPath()) : file.getName()) + (singleLine ? ": " : "\n") + calculateDirectMessage() + (diff == null || singleLine ? "" : "\n"+diff);
+    }
+
+    private String calculateDirectMessage() {
+        var message = super.getMessage();
+        Throwable throwable = this;
+        while ((throwable = throwable.getCause()) != null) {
+            if (throwable.getMessage() != null && !throwable.getMessage().isEmpty()) {
+                return message + ": " + throwable.getMessage();
+            }
+        }
+        return message;
     }
 
     @Override
     public String getMessage() {
-        return format(null);
+        return format(null, true);
     }
 }
