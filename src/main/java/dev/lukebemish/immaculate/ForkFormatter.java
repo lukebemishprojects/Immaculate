@@ -59,7 +59,9 @@ public class ForkFormatter implements FileFormatter {
             var output = new ByteArrayOutputStream();
             try (var os = new DataOutputStream(output)) {
                 os.writeUTF(fileName);
-                os.writeUTF(text);
+                var encodedText = text.getBytes(StandardCharsets.UTF_8);
+                os.writeInt(encodedText.length);
+                os.write(encodedText);
             }
             var bytes = executor.submit(output.toByteArray());
             return new String(bytes, StandardCharsets.UTF_8);
