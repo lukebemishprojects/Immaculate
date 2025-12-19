@@ -28,7 +28,7 @@ public abstract class GoogleJavaFormatStep extends WrapperFormattingStep {
     }
 
     private static final String MAVEN_PATH = "com.google.googlejavaformat:google-java-format";
-    private static final String DEFAULT_VERSION = "1.22.0";
+    private static final String DEFAULT_VERSION = "1.33.0";
 
     private transient final Property<Dependency> formatterDependency;
 
