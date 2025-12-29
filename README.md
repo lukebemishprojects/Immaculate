@@ -25,9 +25,9 @@ immaculate {
         java() // Includes all *.java files from each source set in this workflow
         sources() // Includes all files from each source set
         java {
-            include '**/package-info.java' // The included files can be further filtered using Ant-style patterns
+            include "**/package-info.java" // The included files may be further filtered using Ant-style patterns
         }
-        files.from('some-file.txt') // You can also manually declare files to include
+        files.from("some-file.txt") // You may also manually declare files to include
     }
 }
 ```
@@ -36,12 +36,12 @@ Workflows also define certain shared properties for formatting.
 
 ```gradle
 // Allows definition of blocks where Immaculate's formatting is ignored.
-toggleOff = @formatter:off'
-toggleOn = '@formatter:on'
+toggleOff = "@formatter:off"
+toggleOn = "@formatter:on"
 
 // The location that the file path of files with formatting errors will be reported from
 // This is useful if you are consuming Immaculate's output to annotate GitHub action runs or the like
-reportIssuesRootPath = file('src/main/java')
+reportIssuesRootPath = file("src/main/java")
 ```
 
 ## Steps
@@ -120,7 +120,7 @@ This will sort first `java` imports, then `javax`, then all others, with an empt
 ### External Formatters
 
 Immaculate can run certain external formatters over your code. These formatters are located via standard Gradle dependencies.
-You can customize the version of the formatter resolved, or even the entire dependency used.
+You may customize the version of the formatter resolved, or even the entire dependency used.
 
 ```gradle
 version = "x.y.z" // Use a custom version
