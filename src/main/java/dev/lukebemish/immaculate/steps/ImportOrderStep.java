@@ -1,10 +1,10 @@
 package dev.lukebemish.immaculate.steps;
 
 import dev.lukebemish.immaculate.FileFormatter;
+import dev.lukebemish.immaculate.FormattingStep;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.tasks.InputFile;
 
-import javax.inject.Inject;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -16,14 +16,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public abstract class ImportOrderStep extends AbstractFormattingStep {
+public abstract class ImportOrderStep extends FormattingStep {
     @InputFile
     public abstract RegularFileProperty getConfig();
-
-    @Inject
-    public ImportOrderStep(String name) {
-        super(name);
-    }
 
     @Override
     public FileFormatter formatter() {

@@ -1,25 +1,33 @@
 package dev.lukebemish.immaculate.steps;
 
 import dev.lukebemish.immaculate.FormatterDependencies;
+import dev.lukebemish.immaculate.FormattingStep;
+import dev.lukebemish.immaculate.FormattingWorkflow;
 import org.gradle.api.Action;
 import org.gradle.api.Project;
 import org.gradle.api.file.ConfigurableFileCollection;
-import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.tasks.Classpath;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Internal;
 
 import javax.inject.Inject;
+import java.util.Locale;
 
-public abstract class ExternalFormattingStep extends AbstractFormattingStep {
+public abstract class ExternalFormattingStep extends FormattingStep {
     private transient final FormatterDependencies formatterDependencies;
 
-    @SuppressWarnings("UnstableApiUsage")
     @Inject
-    public ExternalFormattingStep(String name, String workflowName, Project project, ObjectFactory objectFactory) {
-        super(name);
-        this.formatterDependencies = objectFactory.newInstance(FormatterDependencies.class);
-        var runtime = project.getConfigurations().create("immaculate" + capitalize(workflowName) + capitalize(name) + "Runtime");
+    protected abstract Project getProject();
+
+    @Inject
+    public ExternalFormattingStep() {
+        this.formatterDependencies = getProject().getObjects().newInstance(FormatterDependencies.class);
+    }
+
+    @SuppressWarnings("UnstableApiUsage")
+    @Override
+    public void workflow(FormattingWorkflow workflow) {
+        var runtime = getProject().getConfigurations().create("immaculate" + capitalize(workflow.getName()) + capitalize(getName()) + "Runtime");
         runtime.fromDependencyCollector(formatterDependencies.getRuntime());
         getFormatterClasspath().from(runtime);
     }
@@ -28,7 +36,7 @@ public abstract class ExternalFormattingStep extends AbstractFormattingStep {
         if (str.isEmpty()) {
             return str;
         }
-        return str.substring(0, 1).toUpperCase() + str.substring(1);
+        return str.substring(0, 1).toUpperCase(Locale.ROOT) + str.substring(1);
     }
 
     @InputFiles

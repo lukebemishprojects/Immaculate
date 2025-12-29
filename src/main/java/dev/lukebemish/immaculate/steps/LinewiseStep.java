@@ -1,15 +1,15 @@
 package dev.lukebemish.immaculate.steps;
 
 import dev.lukebemish.immaculate.FileFormatter;
+import dev.lukebemish.immaculate.FormattingStep;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Nested;
 
-import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
-public abstract class LinewiseStep extends AbstractFormattingStep {
+public abstract class LinewiseStep extends FormattingStep {
     @Nested
     public abstract Property<UnaryOperator<String>> getAction();
 
@@ -23,10 +23,5 @@ public abstract class LinewiseStep extends AbstractFormattingStep {
                 return n == null ? l : n;
             }).collect(Collectors.joining("\n"));
         };
-    }
-
-    @Inject
-    public LinewiseStep(String name) {
-        super(name);
     }
 }

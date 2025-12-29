@@ -4,7 +4,7 @@ import dev.lukebemish.immaculate.FileFormatter;
 import dev.lukebemish.immaculate.ForkFormatterSpec;
 import dev.lukebemish.immaculate.ImmaculatePlugin;
 import dev.lukebemish.immaculate.ForkFormatter;
-import org.gradle.api.Project;
+import org.gradle.api.logging.configuration.LoggingConfiguration;
 import org.gradle.api.logging.configuration.ShowStacktrace;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.ListProperty;
@@ -14,13 +14,10 @@ import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Nested;
 import org.gradle.jvm.toolchain.JavaLauncher;
 
-public abstract class WrapperFormattingStep extends ExternalFormattingStep {
-    private final ObjectFactory objectFactory;
+import javax.inject.Inject;
 
-    public WrapperFormattingStep(String name, String workflowName, Project project, ObjectFactory objectFactory) {
-        super(name, workflowName, project, objectFactory);
-        this.objectFactory = objectFactory;
-        getHideStacktrace().convention(project.getGradle().getStartParameter().getShowStacktrace() == ShowStacktrace.INTERNAL_EXCEPTIONS);
+public abstract class WrapperFormattingStep extends ExternalFormattingStep {
+    public WrapperFormattingStep() {
         this.getDependencies().getRuntime().add("dev.lukebemish.immaculate:wrapper", dep -> {
             if (ImmaculatePlugin.PLUGIN_VERSION != null) {
                 dep.version(constraint ->
@@ -35,15 +32,21 @@ public abstract class WrapperFormattingStep extends ExternalFormattingStep {
 
     abstract protected void configureSpec(ForkFormatterSpec spec);
 
+    @Inject
+    protected abstract LoggingConfiguration getLoggingConfiguration();
+
+    @Inject
+    protected abstract ObjectFactory getObjectFactory();
+
     @Override
     public FileFormatter formatter() {
-        ForkFormatterSpec spec = objectFactory.newInstance(ForkFormatterSpec.class);
+        ForkFormatterSpec spec = getObjectFactory().newInstance(ForkFormatterSpec.class);
         configureSpec(spec);
         spec.getProgramArgs().addAll(getArgs());
         spec.getJvmArgs().addAll(getJvmArgs());
         spec.getJavaLauncher().set(getJavaLauncher());
         spec.getClasspath().from(getFormatterClasspath());
-        spec.getHideStacktrace().set(getHideStacktrace());
+        spec.getHideStacktrace().set(getHideStacktrace().orElse(getLoggingConfiguration().getShowStacktrace() == ShowStacktrace.INTERNAL_EXCEPTIONS));
         return new ForkFormatter(spec);
     }
 

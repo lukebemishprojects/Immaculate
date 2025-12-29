@@ -7,8 +7,8 @@ import dev.lukebemish.immaculate.steps.ImportOrderStep;
 import dev.lukebemish.immaculate.steps.LinewiseStep;
 import dev.lukebemish.immaculate.steps.PalantirJavaFormatStep;
 import org.gradle.api.Action;
+import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer;
 import org.gradle.api.Named;
-import org.gradle.api.NamedDomainObjectFactory;
 import org.gradle.api.NamedDomainObjectList;
 import org.gradle.api.Project;
 import org.gradle.api.file.ConfigurableFileCollection;
@@ -19,9 +19,8 @@ import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.util.PatternFilterable;
 
 import javax.inject.Inject;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.UnaryOperator;
 
 public abstract class FormattingWorkflow implements Named {
@@ -144,57 +143,25 @@ public abstract class FormattingWorkflow implements Named {
         step(name, CustomStep.class, it -> it.getAction().set(customAction));
     }
 
+    private final Set<Class<?>> registeredBindings = new HashSet<>();
+
     public <T extends FormattingStep> void step(String name, Class<T> type, Action<? super T> action) {
-        Property<FormattingStep> property = getObjects().property(FormattingStep.class);
-        property.set(getProject().provider(() -> {
-            T step = createStep(type, name);
+        if (registeredBindings.add(type)) {
+            stepContainer.registerBinding(type, type);
+        }
+        steps.addLater(stepContainer.register(name, type, step -> {
+            step.workflow(this);
             action.execute(step);
-            return step;
         }));
-        steps.addLater(property);
     }
 
     public <T extends FormattingStep> void step(String name, Class<T> type) {
         step(name, type, it -> {});
     }
 
-    private final Map<Class<? extends FormattingStep>, NamedDomainObjectFactory<? extends FormattingStep>> factories = new HashMap<>();
-
-    public FormattingWorkflow() {
-        for (Class<? extends FormattingStep> clazz : List.of(
-            LinewiseStep.class, CustomStep.class, ImportOrderStep.class
-        )) {
-            registerStepType(clazz);
-        }
-        for (Class<? extends FormattingStep> clazz : List.of(
-            GoogleJavaFormatStep.class, EclipseJdtFormatStep.class, PalantirJavaFormatStep.class
-        )) {
-            registerFormatterStepType(clazz);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private <T extends FormattingStep> T createStep(Class<T> clazz, String name) {
-        if (steps.findByName(name) != null) {
-            throw new IllegalArgumentException("Step with name "+name+" already exists");
-        }
-        NamedDomainObjectFactory<T> factory = (NamedDomainObjectFactory<T>) factories.get(clazz);
-        if (factory == null) {
-            throw new IllegalArgumentException("No factory for step type "+clazz);
-        }
-        return factory.create(name);
-    }
-
     @Inject
     protected abstract ObjectFactory getObjects();
 
     private final NamedDomainObjectList<FormattingStep> steps = getObjects().namedDomainObjectList(FormattingStep.class);
-
-    private <T extends FormattingStep> void registerStepType(Class<T> clazz) {
-        factories.put(clazz, name -> getObjects().newInstance(clazz, name));
-    }
-
-    private <T extends FormattingStep> void registerFormatterStepType(Class<T> clazz) {
-        factories.put(clazz, name -> getObjects().newInstance(clazz, name, this.getName()));
-    }
+    private final ExtensiblePolymorphicDomainObjectContainer<FormattingStep> stepContainer = getObjects().polymorphicDomainObjectContainer(FormattingStep.class);
 }

@@ -8,4 +8,6 @@ public abstract class FormattingStep implements Named {
 
     @Input
     public abstract String getName();
+
+    public void workflow(FormattingWorkflow workflow) {}
 }

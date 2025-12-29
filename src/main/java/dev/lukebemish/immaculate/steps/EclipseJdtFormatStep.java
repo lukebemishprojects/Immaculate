@@ -17,8 +17,7 @@ import javax.inject.Inject;
 
 public abstract class EclipseJdtFormatStep extends WrapperFormattingStep {
     @Inject
-    public EclipseJdtFormatStep(String name, String workflowName, Project project, ObjectFactory objectFactory) {
-        super(name, workflowName, project, objectFactory);
+    public EclipseJdtFormatStep() {
         this.getDependencies().getRuntime().add("dev.lukebemish.immaculate.wrapper:eclipse-jdt", dep -> {
             if (ImmaculatePlugin.PLUGIN_VERSION != null) {
                 dep.version(constraint ->
@@ -26,7 +25,7 @@ public abstract class EclipseJdtFormatStep extends WrapperFormattingStep {
                 );
             }
         });
-        this.formatterDependency = objectFactory.property(Dependency.class);
+        this.formatterDependency = getObjectFactory().property(Dependency.class);
         formatterDependency.convention(getDependencies().module(MAVEN_PATH + ":" + DefaultVersions.ECLIPSE_JDT));
         getDependencies().getRuntime().add(formatterDependency);
     }

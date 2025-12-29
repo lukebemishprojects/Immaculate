@@ -2,13 +2,12 @@ package dev.lukebemish.immaculate.steps;
 
 import dev.lukebemish.immaculate.ForkFormatterSpec;
 import dev.lukebemish.immaculate.ImmaculatePlugin;
-import java.util.List;
-import javax.inject.Inject;
-import org.gradle.api.Project;
 import org.gradle.api.artifacts.Dependency;
-import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Internal;
+
+import javax.inject.Inject;
+import java.util.List;
 
 public abstract class PalantirJavaFormatStep extends WrapperFormattingStep {
 
@@ -21,8 +20,7 @@ public abstract class PalantirJavaFormatStep extends WrapperFormattingStep {
     private final transient Property<Dependency> formatterDependency;
 
     @Inject
-    public PalantirJavaFormatStep(final String name, final String workflowName, final Project project, final ObjectFactory objectFactory) {
-        super(name, workflowName, project, objectFactory);
+    public PalantirJavaFormatStep() {
         this.getDependencies().getRuntime().add("dev.lukebemish.immaculate.wrapper:palantir-java-format", dep -> {
             if (ImmaculatePlugin.PLUGIN_VERSION != null) {
                 dep.version(constraint ->
@@ -30,7 +28,7 @@ public abstract class PalantirJavaFormatStep extends WrapperFormattingStep {
                 );
             }
         });
-        this.formatterDependency = objectFactory.property(Dependency.class);
+        this.formatterDependency = getObjectFactory().property(Dependency.class);
         this.formatterDependency.convention(this.getDependencies().module(MAVEN_PATH + ":" + DefaultVersions.PALANTIR_JAVA_FORMAT));
         this.getDependencies().getRuntime().add(this.formatterDependency);
     }
@@ -40,12 +38,12 @@ public abstract class PalantirJavaFormatStep extends WrapperFormattingStep {
         return this.formatterDependency;
     }
 
-    public void version(final String version) {
+    public void version(String version) {
         this.formatterDependency.set(this.getDependencies().module(MAVEN_PATH + ":" + version));
     }
 
     @Override
-    protected void configureSpec(final ForkFormatterSpec spec) {
+    protected void configureSpec(ForkFormatterSpec spec) {
         GOOGLE_JAVA_FORMAT_ADD_EXPORTS.forEach(e -> spec.getJvmArgs().addAll("--add-exports", e + "=ALL-UNNAMED"));
         spec.getWrapperClass().set("dev.lukebemish.immaculate.wrapper.palantirjavaformat.PalantirJavaFormatWrapper");
     }

@@ -2,9 +2,7 @@ package dev.lukebemish.immaculate.steps;
 
 import dev.lukebemish.immaculate.ForkFormatterSpec;
 import dev.lukebemish.immaculate.ImmaculatePlugin;
-import org.gradle.api.Project;
 import org.gradle.api.artifacts.Dependency;
-import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Internal;
 
@@ -13,8 +11,7 @@ import java.util.List;
 
 public abstract class GoogleJavaFormatStep extends WrapperFormattingStep {
     @Inject
-    public GoogleJavaFormatStep(String name, String workflowName, Project project, ObjectFactory objectFactory) {
-        super(name, workflowName, project, objectFactory);
+    public GoogleJavaFormatStep() {
         this.getDependencies().getRuntime().add("dev.lukebemish.immaculate.wrapper:google-java-format", dep -> {
             if (ImmaculatePlugin.PLUGIN_VERSION != null) {
                 dep.version(constraint ->
@@ -22,7 +19,7 @@ public abstract class GoogleJavaFormatStep extends WrapperFormattingStep {
                 );
             }
         });
-        this.formatterDependency = objectFactory.property(Dependency.class);
+        this.formatterDependency = getObjectFactory().property(Dependency.class);
         formatterDependency.convention(getDependencies().module(MAVEN_PATH + ":" + DefaultVersions.GOOGLE_JAVA_FORMAT));
         getDependencies().getRuntime().add(formatterDependency);
     }
