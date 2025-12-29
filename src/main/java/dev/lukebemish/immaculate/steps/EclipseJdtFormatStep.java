@@ -34,7 +34,7 @@ public abstract class EclipseJdtFormatStep extends WrapperFormattingStep {
     private transient final Property<Dependency> formatterDependency;
 
     @Internal
-    protected Property<Dependency> getEclipseJdtFormatter() {
+    protected Property<Dependency> getFormatter() {
         return formatterDependency;
     }
 

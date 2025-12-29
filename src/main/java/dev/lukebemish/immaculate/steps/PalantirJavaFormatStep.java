@@ -35,7 +35,7 @@ public abstract class PalantirJavaFormatStep extends WrapperFormattingStep {
     }
 
     @Internal
-    protected Property<Dependency> getGoogleJavaFormatter() {
+    protected Property<Dependency> getFormatter() {
         return this.formatterDependency;
     }
 

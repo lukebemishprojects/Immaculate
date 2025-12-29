@@ -30,7 +30,7 @@ public abstract class GoogleJavaFormatStep extends WrapperFormattingStep {
     private transient final Property<Dependency> formatterDependency;
 
     @Internal
-    protected Property<Dependency> getGoogleJavaFormatter() {
+    protected Property<Dependency> getFormatter() {
         return formatterDependency;
     }
 
