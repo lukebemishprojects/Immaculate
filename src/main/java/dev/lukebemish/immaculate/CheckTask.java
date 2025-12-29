@@ -12,6 +12,8 @@ import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.FileType;
 import org.gradle.api.file.RegularFileProperty;
+import org.gradle.api.logging.configuration.LoggingConfiguration;
+import org.gradle.api.logging.configuration.ShowStacktrace;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
@@ -26,6 +28,7 @@ import org.gradle.work.ChangeType;
 import org.gradle.work.Incremental;
 import org.gradle.work.InputChanges;
 
+import javax.inject.Inject;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -180,7 +183,7 @@ public abstract class CheckTask extends DefaultTask {
         }
         if (!exceptions.isEmpty()) {
             RuntimeException exception;
-            if (exceptions.size() > 5 && getTruncateExceptions().get()) {
+            if (exceptions.size() > 5 && getTruncateExceptions().orElse(getLoggingConfiguration().getShowStacktrace() == ShowStacktrace.INTERNAL_EXCEPTIONS).get()) {
                 exception = new RuntimeException("Exceptions occurred during formatting; see log for details (first 5 shown; others truncated...");
                 for (int i = 0; i < 5; i++) {
                     printFormattingException(exceptions.get(i));
@@ -193,8 +196,10 @@ public abstract class CheckTask extends DefaultTask {
             }
             throw exception;
         }
-
     }
+
+    @Inject
+    protected abstract LoggingConfiguration getLoggingConfiguration();
 
     private void printFormattingException(Exception e) {
         if (e instanceof FormattingException formattingException) {
@@ -228,7 +233,6 @@ public abstract class CheckTask extends DefaultTask {
         getOutputs().upToDateWhen(t -> true);
         getApplyFixes().convention(false);
         getOldCopyDirectory().convention(getProject().getLayout().getBuildDirectory().dir("immaculate/"+getName()));
-        getTruncateExceptions().convention(true);
     }
 
     protected void from(FormattingWorkflow workflow) {

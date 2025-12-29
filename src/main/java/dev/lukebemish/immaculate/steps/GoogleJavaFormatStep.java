@@ -48,4 +48,20 @@ public abstract class GoogleJavaFormatStep extends WrapperFormattingStep {
         GOOGLE_JAVA_FORMAT_ADD_EXPORTS.forEach(e -> spec.getJvmArgs().addAll("--add-exports", e + "=ALL-UNNAMED"));
         spec.getWrapperClass().set("dev.lukebemish.immaculate.wrapper.googlejavaformat.GoogleJavaFormatWrapper");
     }
+
+    public void fixImports() {
+        getArgs().addAll("--fix-imports-only");
+    }
+
+    public void removeUnusedImports() {
+        getArgs().addAll("--fix-imports-only", "--skip-sorting-imports");
+    }
+
+    public void sortImports() {
+        getArgs().addAll("--fix-imports-only", "--skip-removing-unused-imports");
+    }
+
+    public void aosp() {
+        getArgs().addAll("--aosp");
+    }
 }

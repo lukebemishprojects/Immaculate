@@ -18,7 +18,9 @@ immaculate {
     workflows.register('java') {
         java()
         noTabs()
-        googleRemoveUnusedImports()
+        google{
+            removeUnusedImports()
+        }
         importOrder {
             config = file('ordering.importorder')
         }

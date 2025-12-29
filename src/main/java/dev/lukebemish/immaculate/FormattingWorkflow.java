@@ -103,24 +103,16 @@ public abstract class FormattingWorkflow implements Named {
         noTabs(4);
     }
 
-    public void googleRemoveUnusedImports() {
-        step("googleRemoveUnusedImports", GoogleJavaFormatStep.class, it -> it.getArgs().addAll("--fix-imports-only", "--skip-sorting-imports"));
-    }
-
-    public void googleSortImports() {
-        step("googleSortImports", GoogleJavaFormatStep.class, it -> it.getArgs().addAll("--fix-imports-only", "--skip-removing-unused-imports"));
-    }
-
-    public void googleFixImports() {
-        step("googleFixImports", GoogleJavaFormatStep.class, it -> it.getArgs().addAll("--fix-imports-only"));
-    }
-
     public void google() {
-        step("google", GoogleJavaFormatStep.class);
+        google(it -> {});
     }
 
     public void google(Action<GoogleJavaFormatStep> action) {
         step("google", GoogleJavaFormatStep.class, action);
+    }
+
+    public void palantir() {
+        palantir(it -> {});
     }
 
     public void palantir(Action<PalantirJavaFormatStep> action) {
@@ -143,8 +135,6 @@ public abstract class FormattingWorkflow implements Named {
         step(name, CustomStep.class, it -> it.getAction().set(customAction));
     }
 
-    private final Set<Class<?>> registeredBindings = new HashSet<>();
-
     public <T extends FormattingStep> void step(String name, Class<T> type, Action<? super T> action) {
         if (registeredBindings.add(type)) {
             stepContainer.registerBinding(type, type);
@@ -161,6 +151,8 @@ public abstract class FormattingWorkflow implements Named {
 
     @Inject
     protected abstract ObjectFactory getObjects();
+
+    private final Set<Class<?>> registeredBindings = new HashSet<>();
 
     private final NamedDomainObjectList<FormattingStep> steps = getObjects().namedDomainObjectList(FormattingStep.class);
     private final ExtensiblePolymorphicDomainObjectContainer<FormattingStep> stepContainer = getObjects().polymorphicDomainObjectContainer(FormattingStep.class);

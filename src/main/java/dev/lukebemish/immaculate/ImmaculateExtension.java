@@ -20,7 +20,6 @@ public abstract class ImmaculateExtension {
 
     @Inject
     public ImmaculateExtension(Project project, JavaToolchainService javaToolchainService) {
-        getTruncateExceptions().convention(true);
         getWorkflows().configureEach(workflow -> {
             workflow.getTruncateExceptions().convention(getTruncateExceptions());
             workflow.getReportIssuesRootPath().convention(getReportIssuesRootPath());
