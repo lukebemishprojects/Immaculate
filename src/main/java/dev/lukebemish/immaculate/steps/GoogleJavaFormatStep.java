@@ -20,7 +20,8 @@ public abstract class GoogleJavaFormatStep extends WrapperFormattingStep {
             }
         });
         this.formatterDependency = getObjectFactory().property(Dependency.class);
-        formatterDependency.convention(getDependencies().module(MAVEN_PATH + ":" + DefaultVersions.GOOGLE_JAVA_FORMAT));
+        getVersion().convention(DefaultVersions.GOOGLE_JAVA_FORMAT);
+        formatterDependency.convention(getVersion().map(v -> getDependencies().module(MAVEN_PATH + ":" + v)));
         getDependencies().getRuntime().add(formatterDependency);
     }
 
@@ -33,9 +34,8 @@ public abstract class GoogleJavaFormatStep extends WrapperFormattingStep {
         return formatterDependency;
     }
 
-    public void version(String version) {
-        formatterDependency.set(getDependencies().module(MAVEN_PATH + ":" + version));
-    }
+    @Internal
+    protected abstract Property<String> getVersion();
 
     private static final List<String> GOOGLE_JAVA_FORMAT_ADD_EXPORTS = List.of(
             "jdk.compiler/com.sun.tools.javac.api", "jdk.compiler/com.sun.tools.javac.code",

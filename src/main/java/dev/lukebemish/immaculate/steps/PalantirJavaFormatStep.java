@@ -29,7 +29,8 @@ public abstract class PalantirJavaFormatStep extends WrapperFormattingStep {
             }
         });
         this.formatterDependency = getObjectFactory().property(Dependency.class);
-        this.formatterDependency.convention(this.getDependencies().module(MAVEN_PATH + ":" + DefaultVersions.PALANTIR_JAVA_FORMAT));
+        getVersion().convention(DefaultVersions.PALANTIR_JAVA_FORMAT);
+        formatterDependency.convention(getVersion().map(v -> getDependencies().module(MAVEN_PATH + ":" + v)));
         this.getDependencies().getRuntime().add(this.formatterDependency);
     }
 
@@ -38,9 +39,8 @@ public abstract class PalantirJavaFormatStep extends WrapperFormattingStep {
         return this.formatterDependency;
     }
 
-    public void version(String version) {
-        this.formatterDependency.set(this.getDependencies().module(MAVEN_PATH + ":" + version));
-    }
+    @Internal
+    protected abstract Property<String> getVersion();
 
     @Override
     protected void configureSpec(ForkFormatterSpec spec) {

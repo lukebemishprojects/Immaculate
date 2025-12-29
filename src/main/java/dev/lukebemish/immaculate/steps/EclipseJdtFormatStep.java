@@ -2,10 +2,8 @@ package dev.lukebemish.immaculate.steps;
 
 import dev.lukebemish.immaculate.ForkFormatterSpec;
 import dev.lukebemish.immaculate.ImmaculatePlugin;
-import org.gradle.api.Project;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.file.RegularFileProperty;
-import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.Internal;
@@ -26,7 +24,8 @@ public abstract class EclipseJdtFormatStep extends WrapperFormattingStep {
             }
         });
         this.formatterDependency = getObjectFactory().property(Dependency.class);
-        formatterDependency.convention(getDependencies().module(MAVEN_PATH + ":" + DefaultVersions.ECLIPSE_JDT));
+        getVersion().convention(DefaultVersions.ECLIPSE_JDT);
+        formatterDependency.convention(getVersion().map(v -> getDependencies().module(MAVEN_PATH + ":" + v)));
         getDependencies().getRuntime().add(formatterDependency);
     }
 
@@ -39,9 +38,8 @@ public abstract class EclipseJdtFormatStep extends WrapperFormattingStep {
         return formatterDependency;
     }
 
-    public void version(String version) {
-        formatterDependency.set(getDependencies().module(MAVEN_PATH + ":" + version));
-    }
+    @Internal
+    protected abstract Property<String> getVersion();
 
     @Override
     protected void configureSpec(ForkFormatterSpec spec) {
