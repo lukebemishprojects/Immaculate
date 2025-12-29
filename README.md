@@ -1,10 +1,10 @@
 # Immaculate
 
-Immaculate is a Gradle plugin, inspired by [spotless](https://github.com/diffplug/spotless/), for formatting your code. It aims to make use of Gradle systems whenever possible.
+Immaculate is a Gradle plugin, inspired by [spotless](https://github.com/diffplug/spotless/), for formatting your code. It aims to make use of Gradle systems whenever possible and be compatible with modern Gradle features.
 
 ## Setup
 
-To use Immaculate, apply the plugin to your Gradle project:
+To use Immaculate, apply the plugin to your Gradle project.
 
 ```gradle
 plugins {
@@ -17,7 +17,7 @@ The latest version can be found on the [Gradle Plugin Portal](https://plugins.gr
 ## Workflows
 
 Immaculate's DSL allows you to define a series of formatting workflows, each of which runs over a collection of files
-running certain formatting steps. Workflows define which files they format:
+running certain formatting steps. Workflows define which files they format.
 
 ```gradle
 immaculate {
@@ -32,7 +32,7 @@ immaculate {
 }
 ```
 
-Workflows also define certain shared properties for formatting:
+Workflows also define certain shared properties for formatting.
 
 ```gradle
 // Allows definition of blocks where Immaculate's formatting is ignored.
@@ -47,7 +47,7 @@ reportIssuesRootPath = file('src/main/java')
 ## Steps
 
 Steps implement `FormattingStep` and define a `FileFormatter`, which is a reusable tool to format files during a workflow
-execution. Steps are added by name and type:
+execution. Steps are added by name and type.
 
 ```gradle
 step("stepName", StepType.class) {
@@ -55,29 +55,22 @@ step("stepName", StepType.class) {
 }
 ```
 
-For the built-in step types, Immaculate provides certain helpers. For instance,
+For the built-in step types, Immaculate provides certain helpers. For instance, the following are equivalent:
 
 ```gradle
 google()
-```
-
-Is equivalent to
-
-```gradle
-step("google", GoogleJavaFormatStep.class) {
-    // Default configuration
-}
+step("google", GoogleJavaFormatStep.class) {}
 ```
 
 ### Built-in Steps
 
 #### `CustomStep` and `LinewiseStep`
 
-These steps allow you to define simple steps that transform single lines or entire file content.
+These steps transform single lines or the entire file content.
 
 ```gradle
 linewise("myStep") { line ->
-    return line.capitalize() // Capitalizes each line
+    line.capitalize() // Capitalizes each line
 }
 
 custom("myStep") { contents ->
@@ -85,7 +78,7 @@ custom("myStep") { contents ->
 }
 ```
 
-If these formatters throw exceptions, these will be reported alongside the failing file. Additionally, if the step
+If steps throw exceptions, these will be reported alongside the failing file. Additionally, if the step
 returns `null`, the file/line will be considered unmodified.
 
 ```gradle
@@ -96,7 +89,7 @@ linewise("disallowStarImports") { line ->
 }
 ```
 
-Certain common linewise/custom steps are provided:
+Certain common linewise/custom steps are provided.
 
 ```gradle
 trailingNewline() // Ensures the file ends with a trailing newline
@@ -122,13 +115,12 @@ The import order file takes a `index=value` format, with lines starting with `#`
 0=java
 ```
 
-This will sort first `java` imports, then `javax`, then all others, with a space between the groups.
+This will sort first `java` imports, then `javax`, then all others, with an empty line between the groups.
 
 ### External Formatters
 
-Immaculate can run certain external formatters over your code. These formatters are located via standard Gradle dependencies,
-allowing you to customize the version used. You can customize the version of the formatter resolved, or even the entire dependency
-used:
+Immaculate can run certain external formatters over your code. These formatters are located via standard Gradle dependencies.
+You can customize the version of the formatter resolved, or even the entire dependency used.
 
 ```gradle
 version = "x.y.z" // Use a custom version
@@ -137,7 +129,7 @@ args.add("--some-flag") // Add custom arguments the formatter will be invoked wi
 jvmArgs.add("-Xmx1G") // Add custom JVM arguments when invoking the formatter
 ```
 
-The forked JVM will be shared within a step for every file
+The forked JVM will be shared within a step for every file.
 
 #### `GoogleJavaFormatStep`
 
@@ -162,6 +154,8 @@ eclipse {
 ```
 
 #### `PalantirJavaFormatStep`
+
+Uses [palantir-java-format](https://github.com/palantir/palantir-java-format).
 
 ```gradle
 palantir()
