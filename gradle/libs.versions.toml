@@ -1,6 +1,6 @@
 [versions]
 
-google-java-format="1.33.0"
+google-java-format="1.34.1"
 palantir-java-format="2.86.0"
 eclipse-jdt="3.44.0"
 
