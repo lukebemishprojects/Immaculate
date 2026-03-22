@@ -19,6 +19,7 @@ buildscript {
 }
 
 plugins {
+    id 'dev.lukebemish.central-portal-publishing' version '+' apply false
     id 'dev.lukebemish.jvmfinder-convention' version '+'
     id 'dev.lukebemish.conventions' version '+'
     id 'dev.lukebemish.managedversioning' version '+'
@@ -143,7 +144,7 @@ gradle.lifecycle.beforeProject {
 
     tasks.withType(Sign).configureEach {
         // Gradle broke something in 8.8 here, and now you can't publish plugins to other mavens if signing is disabled...
-        enabled System.getenv('GPG_KEY') !== null
+        enabled = System.getenv('GPG_KEY') !== null
     }
 
     publishing {
