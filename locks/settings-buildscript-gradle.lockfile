@@ -1,0 +1,26 @@
+# This is a Gradle generated file for dependency locking.
+# Manual edits can break the build and are not advised.
+# This file is expected to be part of source control.
+com.gradle.develocity:com.gradle.develocity.gradle.plugin:4.0.1=classpath
+com.gradle:develocity-gradle-plugin:4.0.1=classpath
+com.squareup.okhttp3:okhttp:4.12.0=classpath
+com.squareup.okio:okio-jvm:3.6.0=classpath
+com.squareup.okio:okio:3.6.0=classpath
+dev.lukebemish.central-portal-publishing:dev.lukebemish.central-portal-publishing.gradle.plugin:0.1.3=classpath
+dev.lukebemish.conventions:dev.lukebemish.conventions.gradle.plugin:0.2.0-beta.3=classpath
+dev.lukebemish.jvmfinder-convention:dev.lukebemish.jvmfinder-convention.gradle.plugin:0.1.1=classpath
+dev.lukebemish.managedversioning:dev.lukebemish.managedversioning.gradle.plugin:2.0.0-beta.7=classpath
+dev.lukebemish:central-portal-publishing:0.1.3=classpath
+dev.lukebemish:conventions:0.2.0-beta.3=classpath
+dev.lukebemish:jvmfinder:0.1.1=classpath
+dev.lukebemish:managedversioning:2.0.0-beta.7=classpath
+org.apache.commons:commons-lang3:3.12.0=classpath
+org.apache.commons:commons-text:1.10.0=classpath
+org.gradle.toolchains.foojay-resolver-convention:org.gradle.toolchains.foojay-resolver-convention.gradle.plugin:1.0.0=classpath
+org.gradle.toolchains:foojay-resolver:1.0.0=classpath
+org.jetbrains.kotlin:kotlin-stdlib-common:1.9.10=classpath
+org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.10=classpath
+org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.10=classpath
+org.jetbrains.kotlin:kotlin-stdlib:1.9.10=classpath
+org.jetbrains:annotations:13.0=classpath
+empty=

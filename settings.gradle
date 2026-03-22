@@ -3,12 +3,36 @@ pluginManagement {
         gradlePluginPortal()
         maven { url = 'https://maven.lukebemish.dev/releases/' }
     }
+    plugins {
+        id 'dev.lukebemish.central-portal-publishing' version '+'
+        id 'com.gradle.plugin-publish' version '+'
+        id 'org.gradle.plugin-compatibility' version '+'
+    }
+}
+
+buildscript {
+    dependencyLocking {
+        lockMode = LockMode.STRICT
+        lockAllConfigurations()
+        lockFile.set file("locks/settings-buildscript-gradle.lockfile")
+    }
 }
 
 plugins {
-    id 'dev.lukebemish.conventions' version '0.2.0-beta.2'
-    id 'dev.lukebemish.central-portal-publishing' version '0.1.7' apply false
-    id 'dev.lukebemish.managedversioning' version '2.0.0-beta.7'
+    id 'dev.lukebemish.jvmfinder-convention' version '+'
+    id 'dev.lukebemish.conventions' version '+'
+    id 'dev.lukebemish.managedversioning' version '+'
+}
+
+gradle.lifecycle.beforeProject { p ->
+    p.buildscript {
+        dependencyLocking {
+            lockMode = LockMode.STRICT
+            lockAllConfigurations()
+            var cleanProjectName = (p.path + ":").replace(':', ' ').trim().replace(' ', '-')
+            lockFile.set rootProject.file("locks/${cleanProjectName}${cleanProjectName.empty ? '' : '-'}buildscript-gradle.lockfile")
+        }
+    }
 }
 
 managedVersioning {

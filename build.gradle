@@ -1,8 +1,11 @@
 import org.gradle.api.attributes.plugin.GradlePluginApiVersion
 
 plugins {
+    id 'com.gradle.plugin-publish'
+    id 'org.gradle.plugin-compatibility'
+    id 'java-library'
+    id 'maven-publish'
     id 'java-gradle-plugin'
-    alias cLibs.plugins.gradlepublish
 }
 
 def gradleVersion = "8.8"
@@ -25,6 +28,12 @@ dependencies {
     implementation 'dev.lukebemish:forkedtaskexecutor:0.1.4'
 }
 
+configurations.named("compileOnlyApi") {
+    withDependencies {
+        it.removeElement(project.dependencies.gradleApi())
+    }
+}
+
 gradlePlugin {
     website = 'https://github.com/lukebemishprojects/Immaculate'
     vcsUrl = 'https://github.com/lukebemishprojects/Immaculate.git'
@@ -36,17 +45,23 @@ gradlePlugin {
             displayName = 'Immaculate'
             description = 'A plugin for applying various code formatting'
             tags.addAll(['format', 'style'])
+            compatibility {
+                features {
+                    configurationCache = true
+                }
+            }
         }
     }
 }
 
 processResources {
+    def expansions = [
+        'google-java-format': libs.versions.google.java.format.get(),
+        'palantir-java-format': libs.versions.palantir.java.format.get(),
+        'eclipse-jdt': libs.versions.eclipse.jdt.get()
+    ]
     filesMatching('dev/lukebemish/immaculate/default-versions.properties') {
-        expand([
-            'google-java-format': libs.versions.google.java.format.get(),
-            'palantir-java-format': libs.versions.palantir.java.format.get(),
-            'eclipse-jdt': libs.versions.eclipse.jdt.get()
-        ])
+        expand(expansions)
     }
 }
 

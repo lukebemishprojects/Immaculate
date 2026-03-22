@@ -16,6 +16,7 @@ import org.gradle.api.logging.configuration.LoggingConfiguration;
 import org.gradle.api.logging.configuration.ShowStacktrace;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
+import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Internal;
@@ -41,6 +42,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.StreamSupport;
 
+@CacheableTask
 public abstract class CheckTask extends DefaultTask {
     @Nested
     public abstract ListProperty<FormattingStep> getSteps();
