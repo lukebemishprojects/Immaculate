@@ -156,6 +156,8 @@ public abstract class CheckTask extends DefaultTask {
                             finalText = finalText.replace("\n", "\r\n");
                         }
 
+                        // TODO: correctly run steps inside of toggle
+
                         // De-augment
                         idx = 0;
                         for (var augmentor : augmentors) {
