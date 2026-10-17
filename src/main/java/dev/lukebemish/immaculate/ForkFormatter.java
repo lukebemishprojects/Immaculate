@@ -3,28 +3,10 @@ package dev.lukebemish.immaculate;
 import dev.lukebemish.forkedtaskexecutor.ForkedTaskExecutor;
 import dev.lukebemish.forkedtaskexecutor.ForkedTaskExecutorSpec;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UncheckedIOException;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class ForkFormatter implements FileFormatter {
     private final ForkedTaskExecutor executor;
@@ -54,12 +36,12 @@ public class ForkFormatter implements FileFormatter {
     }
 
     @Override
-    public String format(String fileName, String text) {
+    public String format(FileParams params) {
         try {
             var output = new ByteArrayOutputStream();
             try (var os = new DataOutputStream(output)) {
-                os.writeUTF(fileName);
-                var encodedText = text.getBytes(StandardCharsets.UTF_8);
+                os.writeUTF(params.fileName());
+                var encodedText = params.text().getBytes(StandardCharsets.UTF_8);
                 os.writeInt(encodedText.length);
                 os.write(encodedText);
             }

@@ -1,7 +1,7 @@
 package dev.lukebemish.immaculate;
 
 public interface FileFormatter {
-    String format(String fileName, String text);
+    String format(FileParams params);
 
     default void close() {}
 }

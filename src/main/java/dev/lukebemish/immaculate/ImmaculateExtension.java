@@ -3,6 +3,7 @@ package dev.lukebemish.immaculate;
 import dev.lukebemish.immaculate.steps.WrapperFormattingStep;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
+import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.provider.Property;
@@ -15,7 +16,7 @@ public abstract class ImmaculateExtension {
     public abstract NamedDomainObjectContainer<FormattingWorkflow> getWorkflows();
 
     public abstract Property<Boolean> getTruncateExceptions();
-    public abstract RegularFileProperty getReportIssuesRootPath();
+    public abstract DirectoryProperty getReportIssuesRootPath();
     public abstract Property<JavaLauncher> getDefaultJavaLauncher();
 
     @Inject
@@ -38,5 +39,7 @@ public abstract class ImmaculateExtension {
                 }
             });
         });
+
+        getReportIssuesRootPath().convention(project.getLayout().getProjectDirectory());
     }
 }

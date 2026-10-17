@@ -32,6 +32,7 @@ immaculate {
         }*/
 
         linewise('noWildcardImports') {
+            throw new RuntimeException("Look, I failed!")
             if (it.endsWith('*;')) {
                 throw new GradleException('No wildcard imports are allowed!')
             }
