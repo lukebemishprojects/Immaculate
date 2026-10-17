@@ -13,9 +13,9 @@ class DiffProblem {
         ProblemId.create("dev.lukebemish.immaculate.diff", "Non-matching output", CheckTask.PROBLEM_GROUP);
 
     private final File file;
-    private final String diff;
+    private final CheckTask.DiffData diff;
 
-    public DiffProblem(File file, String diff) {
+    public DiffProblem(File file, CheckTask.DiffData diff) {
         this.file = file;
         this.diff = diff;
     }
@@ -31,11 +31,18 @@ class DiffProblem {
             new DiffException(rootPath),
             DIFF,
             spec -> {
-                spec.details(diff);
+                spec.details(diff.pretty());
+                String filePath;
                 if (rootPath == null) {
-                    spec.fileLocation(file.getPath());
+                    filePath = file.getPath();
                 } else {
-                    spec.fileLocation(rootPath.getAsFile().toPath().relativize(file.toPath()).toString());
+                    filePath = rootPath.getAsFile().toPath().relativize(file.toPath()).toString();
+                }
+                for (var edit : diff.edits()) {
+                    // These are actually line numbers
+                    for (int i = edit.getBeginA(); i < edit.getBeginA() + edit.getLengthA(); i++) {
+                        spec.lineInFileLocation(filePath, i);
+                    }
                 }
             }
         );

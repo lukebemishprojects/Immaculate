@@ -15,14 +15,12 @@ import javax.inject.Inject;
 public abstract class ImmaculateExtension {
     public abstract NamedDomainObjectContainer<FormattingWorkflow> getWorkflows();
 
-    public abstract Property<Boolean> getTruncateExceptions();
     public abstract DirectoryProperty getReportIssuesRootPath();
     public abstract Property<JavaLauncher> getDefaultJavaLauncher();
 
     @Inject
     public ImmaculateExtension(Project project, JavaToolchainService javaToolchainService) {
         getWorkflows().configureEach(workflow -> {
-            workflow.getTruncateExceptions().convention(getTruncateExceptions());
             workflow.getReportIssuesRootPath().convention(getReportIssuesRootPath());
         });
         getDefaultJavaLauncher().convention(project.provider(() -> {

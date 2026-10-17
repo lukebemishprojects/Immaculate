@@ -14,7 +14,6 @@ import org.gradle.api.file.FileType;
 import org.gradle.api.logging.configuration.LoggingConfiguration;
 import org.gradle.api.problems.ProblemGroup;
 import org.gradle.api.problems.ProblemId;
-import org.gradle.api.problems.ProblemSpec;
 import org.gradle.api.problems.Problems;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
@@ -23,13 +22,11 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Nested;
-import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.VerificationException;
 import org.gradle.work.ChangeType;
-import org.gradle.work.FileChange;
 import org.gradle.work.Incremental;
 import org.gradle.work.InputChanges;
 
@@ -41,18 +38,19 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.StreamSupport;
 
 @CacheableTask
 public abstract class CheckTask extends DefaultTask {
     static final ProblemGroup PROBLEM_GROUP = ProblemGroup.create("dev.lukebemish.immaculate", "Formatting Errors");
-    private static final ProblemId EXCEPTION =
-        ProblemId.create("exception-thrown", "Exception thrown in formatter", PROBLEM_GROUP);
+    private static final ProblemId FORMATTER_EXCEPTION =
+        ProblemId.create("formatter-exception", "Exception thrown in formatter", PROBLEM_GROUP);
+    private static final ProblemId AUGMENT_EXCEPTION =
+        ProblemId.create("formatter-exception", "Exception thrown while applying augmentor", PROBLEM_GROUP);
+    private static final ProblemId DEAUGMENT_EXCEPTION =
+        ProblemId.create("formatter-exception", "Exception thrown while unapplying augmentor", PROBLEM_GROUP);
     private static final ProblemId FAILED_TO_CLOSE_FORMATTER =
         ProblemId.create("failed-to-close-formatter", "Failed to close formatter", PROBLEM_GROUP);
     private static final ProblemId FORMATTING_IO =
@@ -60,6 +58,9 @@ public abstract class CheckTask extends DefaultTask {
 
     @Nested
     public abstract ListProperty<FormattingStep> getSteps();
+
+    @Nested
+    public abstract ListProperty<FormattingAugmentor> getAugmentors();
 
     @InputFiles
     @Incremental
@@ -72,21 +73,12 @@ public abstract class CheckTask extends DefaultTask {
     @Internal
     public abstract DirectoryProperty getOldCopyDirectory();
 
-    @Input
-    @Optional
-    public abstract Property<String> getToggleOff();
-
-    @Input
-    @Optional
-    public abstract Property<String> getToggleOn();
-
-    @Internal
-    public abstract Property<Boolean> getTruncateExceptions();
-
     @Internal
     public abstract DirectoryProperty getReportIssuesRootPath();
 
     private record NamedFormatter(String name, FileFormatter formatter) {}
+
+    private record NamedAugmentor<T>(String name, FileAugmentor<T> augmentor) {}
 
     private static final DateFormat OLD_FILE_DATE_FORMAT = new SimpleDateFormat("yyyyMMddHHmmss");
 
@@ -97,6 +89,7 @@ public abstract class CheckTask extends DefaultTask {
         }
         final var reporter = new BetterProblemReporter(getProblems().getReporter());
         List<NamedFormatter> formatters = getSteps().get().stream().map(step -> new NamedFormatter(step.getName(), step.formatter())).toList();
+        List<? extends NamedAugmentor<?>> augmentors = getAugmentors().get().stream().map(augmentor -> new NamedAugmentor<>(augmentor.getName(), augmentor.augmentor())).toList();
         try {
             StreamSupport.stream(inputs.getFileChanges(getFiles()).spliterator(), true).forEach(change -> {
                 if (change.getChangeType() != ChangeType.REMOVED && change.getFileType() == FileType.FILE) {
@@ -104,42 +97,43 @@ public abstract class CheckTask extends DefaultTask {
                         String originalText = Files.readString(change.getFile().toPath());
                         String text = originalText;
 
-                        // Grab toggles
-                        int index = 0;
-                        List<String> parts = new ArrayList<>();
-                        List<String> excluded = new ArrayList<>();
-                        if (getToggleOff().isPresent() && getToggleOn().isPresent()) {
-                            while (index < text.length()) {
-                                int oldIndex = index;
-                                index = text.indexOf(getToggleOff().get(), index);
-                                if (index != -1) {
-                                    int end = text.indexOf(getToggleOn().get(), index);
-                                    if (end != -1) {
-                                        int startIndex = index + getToggleOff().get().length();
-                                        int nextIndex = end + getToggleOn().get().length();
-                                        String suffix = ":" + excluded.size();
-                                        parts.add(text.substring(oldIndex, startIndex) + suffix);
-                                        excluded.add(text.substring(startIndex, nextIndex));
-                                        parts.add(text.substring(startIndex, nextIndex) + suffix);
-                                        index = nextIndex;
-                                    } else {
-                                        throw new RuntimeException("Mismatched toggle");
-                                    }
+                        // Augment
+                        Object[] augmentorData = new Object[augmentors.size()];
+                        int idx = 0;
+                        for (var augmentor : augmentors) {
+                            String newText;
+                            try {
+                                final var fIdx = idx;
+                                newText = augmentor.augmentor.augment(new FileParams(change.getFile().getName(), text), v -> {
+                                    augmentorData[fIdx] = v;
+                                });
+                            } catch (Exception e) {
+                                VerificationException ve;
+                                if (e instanceof VerificationException verificationException) {
+                                    ve = verificationException;
                                 } else {
-                                    parts.add(text.substring(oldIndex));
-                                    break;
+                                    ve = new VerificationException("Error in augmentor application", e);
                                 }
+                                reporter.throwingLater(
+                                    ve,
+                                    AUGMENT_EXCEPTION,
+                                    spec -> {
+                                        spec.contextualLabel("Error from augmentor '" + augmentor.name() + "'");
+                                        spec.fileLocation(relativize(change.getFile()));
+                                    });
+                                throw new HandledException();
                             }
-                            text = String.join("", parts);
+                            text = newText;
+                            idx++;
                         }
 
 
                         boolean crlf = text.contains("\r\n");
-                        final var finalText = new String[]{text};
+                        var finalText = text;
                         for (var formatter : formatters) {
                             String newText;
                             try {
-                                newText = formatter.formatter.format(new FileParams(change.getFile().getName(), finalText[0]));
+                                finalText = formatter.formatter.format(new FileParams(change.getFile().getName(), finalText));
                             } catch (Exception e) {
                                 VerificationException ve;
                                 if (e instanceof VerificationException verificationException) {
@@ -149,52 +143,52 @@ public abstract class CheckTask extends DefaultTask {
                                 }
                                 reporter.throwingLater(
                                     ve,
-                                    EXCEPTION,
+                                    FORMATTER_EXCEPTION,
                                     spec -> {
                                         spec.contextualLabel("Error from formatter '" + formatter.name() + "'");
                                         spec.fileLocation(relativize(change.getFile()));
                                     });
                                 throw new HandledException();
                             }
-                            if (!finalText[0].equals(newText)) {
-                                finalText[0] = newText;
-                            }
                         }
-                        finalText[0] = finalText[0].replace("\r\n", "\n");
+                        finalText = finalText.replace("\r\n", "\n");
                         if (crlf) {
-                            finalText[0] = finalText[0].replace("\n", "\r\n");
+                            finalText = finalText.replace("\n", "\r\n");
                         }
 
-                        // Replace toggles
-                        if (getToggleOff().isPresent() && getToggleOn().isPresent()) {
-                            for (int i = 0; i < excluded.size(); i++) {
-                                int start = finalText[0].indexOf(getToggleOff().get() + ':' + i);
-                                if (start == -1) {
-                                    throw new RuntimeException("Could not recover toggle block");
+                        // De-augment
+                        idx = 0;
+                        for (var augmentor : augmentors) {
+                            try {
+                                finalText = helpDeAugment(augmentor.augmentor, new FileParams(change.getFile().getName(), text), augmentorData[idx]);
+                            } catch (Exception e) {
+                                VerificationException ve;
+                                if (e instanceof VerificationException verificationException) {
+                                    ve = verificationException;
+                                } else {
+                                    ve = new VerificationException("Error in augmentor unapplication", e);
                                 }
-                                int end = finalText[0].indexOf(getToggleOn().get() + ':' + i, start);
-                                if (end == -1) {
-                                    throw new RuntimeException("Could not recover toggle block");
-                                }
-                                int startIndex = start + getToggleOff().get().length() + (":" + i).length();
-                                int nextIndex = end + getToggleOn().get().length() + (":" + i).length();
-                                String inner = finalText[0].substring(startIndex, end);
-                                if (inner.contains(getToggleOff().get()) || inner.contains(getToggleOn().get())) {
-                                    throw new RuntimeException("Mismatched toggle");
-                                }
-                                finalText[0] = finalText[0].substring(0, start) + getToggleOff().get() + excluded.get(i) + finalText[0].substring(nextIndex);
+                                reporter.throwingLater(
+                                    ve,
+                                    DEAUGMENT_EXCEPTION,
+                                    spec -> {
+                                        spec.contextualLabel("Error from augmentor '" + augmentor.name() + "'");
+                                        spec.fileLocation(relativize(change.getFile()));
+                                    });
+                                throw new HandledException();
                             }
+                            idx++;
                         }
 
-                        if (!originalText.equals(finalText[0])) {
+                        if (!originalText.equals(finalText)) {
                             if (getApplyFixes().get()) {
                                 var timestamp = OLD_FILE_DATE_FORMAT.format(new Date());
                                 var outFile = getOldCopyDirectory().file(change.getFile().getName() + "." + timestamp + DigestUtils.md5Hex(originalText));
                                 Files.createDirectories(outFile.get().getAsFile().toPath().getParent());
                                 Files.writeString(outFile.get().getAsFile().toPath(), originalText);
-                                Files.writeString(change.getFile().toPath(), finalText[0]);
+                                Files.writeString(change.getFile().toPath(), finalText);
                             } else {
-                                new DiffProblem(change.getFile(), diff(originalText, finalText[0])).make(reporter, getReportIssuesRootPath().getOrNull());
+                                new DiffProblem(change.getFile(), diff(originalText, finalText)).make(reporter, getReportIssuesRootPath().getOrNull());
                                 throw new HandledException();
                             }
                         }
@@ -228,6 +222,11 @@ public abstract class CheckTask extends DefaultTask {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private static <T> String helpDeAugment(FileAugmentor<T> augmentor, FileParams fileParams, Object augmentorDatum) {
+        return augmentor.deAugment(fileParams, (T) augmentorDatum);
+    }
+
     private String relativize(File file) {
         var rootPath = getReportIssuesRootPath().getOrNull();
         if (rootPath == null) {
@@ -245,7 +244,9 @@ public abstract class CheckTask extends DefaultTask {
     @Inject
     protected abstract Problems getProblems();
 
-    private static String diff(String oldString, String newString) throws IOException {
+    record DiffData(String pretty, EditList edits) {}
+
+    private static DiffData diff(String oldString, String newString) throws IOException {
         RawText oldText = new RawText(makeVisible(oldString).getBytes(StandardCharsets.UTF_8));
         RawText newText = new RawText(makeVisible(newString).getBytes(StandardCharsets.UTF_8));
         EditList edits = new EditList();
@@ -258,7 +259,7 @@ public abstract class CheckTask extends DefaultTask {
         try (DiffFormatter formatter = new DiffFormatter(out)) {
             formatter.format(edits, oldText, newText);
         }
-        return out.toString(StandardCharsets.UTF_8);
+        return new DiffData(out.toString(StandardCharsets.UTF_8), edits);
     }
 
     private static String makeVisible(String text) {
@@ -273,10 +274,8 @@ public abstract class CheckTask extends DefaultTask {
 
     protected void from(FormattingWorkflow workflow) {
         this.getSteps().set(workflow.getSteps());
+        this.getAugmentors().set(workflow.getAugmentors());
         this.getFiles().from(workflow.getFiles());
-        this.getToggleOff().set(workflow.getToggleOff());
-        this.getToggleOn().set(workflow.getToggleOn());
-        getTruncateExceptions().set(workflow.getTruncateExceptions());
         getReportIssuesRootPath().set(workflow.getReportIssuesRootPath());
     }
 }
