@@ -27,6 +27,7 @@ import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.api.tasks.VerificationException;
 import org.gradle.work.ChangeType;
 import org.gradle.work.FileChange;
 import org.gradle.work.Incremental;
@@ -94,6 +95,7 @@ public abstract class CheckTask extends DefaultTask {
         if (getApplyFixes().get()) {
             FileUtils.deleteDirectory(getOldCopyDirectory().get().getAsFile());
         }
+        final var reporter = new BetterProblemReporter(getProblems().getReporter());
         List<NamedFormatter> formatters = getSteps().get().stream().map(step -> new NamedFormatter(step.getName(), step.formatter())).toList();
         try {
             StreamSupport.stream(inputs.getFileChanges(getFiles()).spliterator(), true).forEach(change -> {
@@ -139,8 +141,14 @@ public abstract class CheckTask extends DefaultTask {
                             try {
                                 newText = formatter.formatter.format(new FileParams(change.getFile().getName(), finalText[0]));
                             } catch (Exception e) {
-                                getProblems().getReporter().throwing(
-                                    e,
+                                VerificationException ve;
+                                if (e instanceof VerificationException verificationException) {
+                                    ve = verificationException;
+                                } else {
+                                    ve = new VerificationException("Error in formatter step", e);
+                                }
+                                reporter.throwingLater(
+                                    ve,
                                     EXCEPTION,
                                     spec -> {
                                         spec.contextualLabel("Error from formatter '" + formatter.name() + "'");
@@ -186,20 +194,20 @@ public abstract class CheckTask extends DefaultTask {
                                 Files.writeString(outFile.get().getAsFile().toPath(), originalText);
                                 Files.writeString(change.getFile().toPath(), finalText[0]);
                             } else {
-                                new DiffProblem(change.getFile(), diff(originalText, finalText[0])).make(getProblems().getReporter(), getReportIssuesRootPath().getOrNull());
+                                new DiffProblem(change.getFile(), diff(originalText, finalText[0])).make(reporter, getReportIssuesRootPath().getOrNull());
+                                throw new HandledException();
                             }
                         }
                     } catch (IOException e) {
                         // Fail-fast -- this is generally speaking _bad_
-                        throw getProblems().getReporter().throwing(
+                        throw reporter.throwing(
                             e,
                             FORMATTING_IO,
                             spec -> {
                                 spec.fileLocation(relativize(change.getFile()));
                             }
                         );
-                    } catch (HandledException e) {
-                    }
+                    } catch (HandledException e) {}
                 }
             });
         } finally {
@@ -207,7 +215,7 @@ public abstract class CheckTask extends DefaultTask {
                 try {
                     formatter.formatter.close();
                 } catch (Exception e) {
-                    getProblems().getReporter().throwing(
+                    reporter.throwingLater(
                         e,
                         FAILED_TO_CLOSE_FORMATTER,
                         spec -> {
@@ -216,6 +224,7 @@ public abstract class CheckTask extends DefaultTask {
                     );
                 }
             }
+            reporter.flush(this);
         }
     }
 

@@ -3,6 +3,7 @@ package dev.lukebemish.immaculate;
 import org.gradle.api.file.Directory;
 import org.gradle.api.problems.ProblemId;
 import org.gradle.api.problems.ProblemReporter;
+import org.gradle.api.tasks.VerificationException;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
@@ -19,14 +20,14 @@ class DiffProblem {
         this.diff = diff;
     }
 
-    public class DiffException extends RuntimeException {
+    public class DiffException extends VerificationException {
         public DiffException(@Nullable Directory rootPath) {
             super("Issue formatting file " + (rootPath == null ? file.getName() : rootPath.getAsFile().toPath().relativize(file.toPath()).toString()) + ": output did not match original code");
         }
     }
 
-    public void make(ProblemReporter reporter, @Nullable Directory rootPath) {
-        throw reporter.throwing(
+    public void make(BetterProblemReporter reporter, @Nullable Directory rootPath) {
+        reporter.throwingLater(
             new DiffException(rootPath),
             DIFF,
             spec -> {
