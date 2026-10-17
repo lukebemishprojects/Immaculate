@@ -1,5 +1,6 @@
 package dev.lukebemish.immaculate;
 
+import dev.lukebemish.immaculate.steps.AugmentorStep;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.diff.DiffFormatter;
@@ -11,11 +12,10 @@ import org.gradle.api.DefaultTask;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.FileType;
-import org.gradle.api.logging.configuration.LoggingConfiguration;
+import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.problems.ProblemGroup;
 import org.gradle.api.problems.ProblemId;
 import org.gradle.api.problems.Problems;
-import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Input;
@@ -25,10 +25,10 @@ import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.api.tasks.VerificationException;
 import org.gradle.work.ChangeType;
 import org.gradle.work.Incremental;
 import org.gradle.work.InputChanges;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.inject.Inject;
 import java.io.ByteArrayOutputStream;
@@ -39,12 +39,13 @@ import java.nio.file.Files;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.StreamSupport;
 
 @CacheableTask
 public abstract class CheckTask extends DefaultTask {
-    static final ProblemGroup PROBLEM_GROUP = ProblemGroup.create("dev.lukebemish.immaculate", "Formatting Errors");
+    @ApiStatus.Internal
+    public static final ProblemGroup PROBLEM_GROUP = ProblemGroup.create("dev.lukebemish.immaculate", "Formatting Errors");
     private static final ProblemId FORMATTER_EXCEPTION =
         ProblemId.create("formatter-exception", "Exception thrown in formatter", PROBLEM_GROUP);
     private static final ProblemId AUGMENT_EXCEPTION =
@@ -57,10 +58,7 @@ public abstract class CheckTask extends DefaultTask {
         ProblemId.create("formatting-io", "IO issue during formatting", PROBLEM_GROUP);
 
     @Nested
-    public abstract ListProperty<FormattingStep> getSteps();
-
-    @Nested
-    public abstract ListProperty<FormattingAugmentor> getAugmentors();
+    public abstract Property<FormattingStep> getFormattingStep();
 
     @InputFiles
     @Incremental
@@ -76,10 +74,6 @@ public abstract class CheckTask extends DefaultTask {
     @Internal
     public abstract DirectoryProperty getReportIssuesRootPath();
 
-    private record NamedFormatter(String name, FileFormatter formatter) {}
-
-    private record NamedAugmentor<T>(String name, FileAugmentor<T> augmentor) {}
-
     private static final DateFormat OLD_FILE_DATE_FORMAT = new SimpleDateFormat("yyyyMMddHHmmss");
 
     @TaskAction
@@ -87,100 +81,18 @@ public abstract class CheckTask extends DefaultTask {
         if (getApplyFixes().get()) {
             FileUtils.deleteDirectory(getOldCopyDirectory().get().getAsFile());
         }
-        final var reporter = new BetterProblemReporter(getProblems().getReporter());
-        List<NamedFormatter> formatters = getSteps().get().stream().map(step -> new NamedFormatter(step.getName(), step.formatter())).toList();
-        List<? extends NamedAugmentor<?>> augmentors = getAugmentors().get().stream().map(augmentor -> new NamedAugmentor<>(augmentor.getName(), augmentor.augmentor())).toList();
+
+        var formatter = getFormattingStep().get().formatter();
+
+        final var reporter = new ProblemReportingHelper(getProblems().getReporter());
         try {
             StreamSupport.stream(inputs.getFileChanges(getFiles()).spliterator(), true).forEach(change -> {
                 if (change.getChangeType() != ChangeType.REMOVED && change.getFileType() == FileType.FILE) {
                     try {
                         String originalText = Files.readString(change.getFile().toPath());
-                        String text = originalText;
-
-                        // Augment
-                        Object[] augmentorData = new Object[augmentors.size()];
-                        int idx = 0;
-                        for (var augmentor : augmentors) {
-                            String newText;
-                            try {
-                                final var fIdx = idx;
-                                newText = augmentor.augmentor.augment(new FileParams(change.getFile().getName(), text), v -> {
-                                    augmentorData[fIdx] = v;
-                                });
-                            } catch (Exception e) {
-                                VerificationException ve;
-                                if (e instanceof VerificationException verificationException) {
-                                    ve = verificationException;
-                                } else {
-                                    ve = new VerificationException("Error in augmentor application", e);
-                                }
-                                reporter.throwingLater(
-                                    ve,
-                                    AUGMENT_EXCEPTION,
-                                    spec -> {
-                                        spec.contextualLabel("Error from augmentor '" + augmentor.name() + "'");
-                                        spec.fileLocation(relativize(change.getFile()));
-                                    });
-                                throw new HandledException();
-                            }
-                            text = newText;
-                            idx++;
-                        }
-
-
-                        boolean crlf = text.contains("\r\n");
-                        var finalText = text;
-                        for (var formatter : formatters) {
-                            String newText;
-                            try {
-                                finalText = formatter.formatter.format(new FileParams(change.getFile().getName(), finalText));
-                            } catch (Exception e) {
-                                VerificationException ve;
-                                if (e instanceof VerificationException verificationException) {
-                                    ve = verificationException;
-                                } else {
-                                    ve = new VerificationException("Error in formatter step", e);
-                                }
-                                reporter.throwingLater(
-                                    ve,
-                                    FORMATTER_EXCEPTION,
-                                    spec -> {
-                                        spec.contextualLabel("Error from formatter '" + formatter.name() + "'");
-                                        spec.fileLocation(relativize(change.getFile()));
-                                    });
-                                throw new HandledException();
-                            }
-                        }
-                        finalText = finalText.replace("\r\n", "\n");
-                        if (crlf) {
-                            finalText = finalText.replace("\n", "\r\n");
-                        }
-
-                        // TODO: correctly run steps inside of toggle
-
-                        // De-augment
-                        idx = 0;
-                        for (var augmentor : augmentors) {
-                            try {
-                                finalText = helpDeAugment(augmentor.augmentor, new FileParams(change.getFile().getName(), text), augmentorData[idx]);
-                            } catch (Exception e) {
-                                VerificationException ve;
-                                if (e instanceof VerificationException verificationException) {
-                                    ve = verificationException;
-                                } else {
-                                    ve = new VerificationException("Error in augmentor unapplication", e);
-                                }
-                                reporter.throwingLater(
-                                    ve,
-                                    DEAUGMENT_EXCEPTION,
-                                    spec -> {
-                                        spec.contextualLabel("Error from augmentor '" + augmentor.name() + "'");
-                                        spec.fileLocation(relativize(change.getFile()));
-                                    });
-                                throw new HandledException();
-                            }
-                            idx++;
-                        }
+                        var finalText = formatter.format(
+                            new FileParams(change.getFile().getName(), relativize(change.getFile()), originalText, reporter)
+                        );
 
                         if (!originalText.equals(finalText)) {
                             if (getApplyFixes().get()) {
@@ -203,30 +115,16 @@ public abstract class CheckTask extends DefaultTask {
                                 spec.fileLocation(relativize(change.getFile()));
                             }
                         );
-                    } catch (HandledException e) {}
+                    } catch (HandledException ignored) {}
                 }
             });
         } finally {
-            for (NamedFormatter formatter : formatters) {
-                try {
-                    formatter.formatter.close();
-                } catch (Exception e) {
-                    reporter.throwingLater(
-                        e,
-                        FAILED_TO_CLOSE_FORMATTER,
-                        spec -> {
-                            spec.contextualLabel("Error from formatter '" + formatter.name() + "'");
-                        }
-                    );
-                }
+            try {
+                formatter.close(new SharedParams(reporter));
+            } catch (HandledException ignored) {} finally {
+                reporter.flush(this);
             }
-            reporter.flush(this);
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T> String helpDeAugment(FileAugmentor<T> augmentor, FileParams fileParams, Object augmentorDatum) {
-        return augmentor.deAugment(fileParams, (T) augmentorDatum);
     }
 
     private String relativize(File file) {
@@ -238,13 +136,11 @@ public abstract class CheckTask extends DefaultTask {
         }
     }
 
-    private static class HandledException extends Exception {}
-
-    @Inject
-    protected abstract LoggingConfiguration getLoggingConfiguration();
-
     @Inject
     protected abstract Problems getProblems();
+
+    @Inject
+    protected abstract ObjectFactory getObjects();
 
     record DiffData(String pretty, EditList edits) {}
 
@@ -274,9 +170,39 @@ public abstract class CheckTask extends DefaultTask {
         getOldCopyDirectory().convention(getProject().getLayout().getBuildDirectory().dir("immaculate/"+getName()));
     }
 
+    @ApiStatus.Internal
+    public static abstract class LineBreakAugmentor extends FormattingAugmentor {
+        @Override
+        public FileAugmentor<?> augmentor() {
+            return new FileAugmentor<Boolean>() {
+                @Override
+                public String augment(FileParams params, Consumer<Boolean> store) {
+                    store.accept(params.text().contains("\r\n"));
+                    return params.text().replace("\r\n", "\n");
+                }
+
+                @Override
+                public String deAugment(FileParams params, Boolean crlf) {
+                    var text = params.text().replace("\r\n", "\n");
+                    if (crlf) {
+                        text = text.replace("\n", "\r\n");
+                    }
+                    return text;
+                }
+            };
+        }
+    }
+
     protected void from(FormattingWorkflow workflow) {
-        this.getSteps().set(workflow.getSteps());
-        this.getAugmentors().set(workflow.getAugmentors());
+        var wrapper = getObjects().domainObjectContainer(AugmentorStep.class).register(getPath(), step -> {
+            step.getAugmentor().set(getObjects().domainObjectContainer(LineBreakAugmentor.class).register(getPath(), augmentor -> {
+                augmentor.getSteps().addAllLater(workflow.getSteps().getElements());
+            }));
+            step.workflow(workflow);
+        });
+
+        this.getFormattingStep().set(wrapper);
+
         this.getFiles().from(workflow.getFiles());
         getReportIssuesRootPath().set(workflow.getReportIssuesRootPath());
     }

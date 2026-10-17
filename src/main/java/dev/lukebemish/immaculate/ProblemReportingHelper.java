@@ -11,12 +11,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-class BetterProblemReporter {
+public class ProblemReportingHelper {
     private final ProblemReporter problemReporter;
     private final List<RuntimeException> suppressed = Collections.synchronizedList(new ArrayList<>());
 
-    BetterProblemReporter(ProblemReporter problemReporter) {
+    ProblemReportingHelper(ProblemReporter problemReporter) {
         this.problemReporter = problemReporter;
+    }
+
+    public ProblemReporter reporter() {
+        return problemReporter;
     }
 
     public void report(ProblemId id, Action<? super ProblemSpec> config) {

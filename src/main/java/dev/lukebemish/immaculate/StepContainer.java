@@ -1,5 +1,7 @@
 package dev.lukebemish.immaculate;
 
+import dev.lukebemish.immaculate.augmentors.ToggleAugmentor;
+import dev.lukebemish.immaculate.steps.AugmentorStep;
 import dev.lukebemish.immaculate.steps.CustomStep;
 import dev.lukebemish.immaculate.steps.EclipseJdtFormatStep;
 import dev.lukebemish.immaculate.steps.GoogleJavaFormatStep;
@@ -11,7 +13,6 @@ import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer;
 import org.gradle.api.NamedDomainObjectList;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.tasks.Internal;
-import org.gradle.api.tasks.Nested;
 
 import javax.inject.Inject;
 import java.util.HashSet;
@@ -19,7 +20,6 @@ import java.util.Set;
 import java.util.function.UnaryOperator;
 
 public abstract class StepContainer {
-    @Nested
     public NamedDomainObjectList<FormattingStep> getSteps() {
         return this.steps;
     }
@@ -100,6 +100,20 @@ public abstract class StepContainer {
 
     public <T extends FormattingStep> void step(String name, Class<T> type) {
         step(name, type, it -> {});
+    }
+
+    public <T extends FormattingAugmentor> void augmentor(String name, Class<T> type, Action<? super T> action) {
+        step(name, AugmentorStep.class, step -> {
+            step.getAugmentor().set(getObjects().domainObjectContainer(type).register(name, action));
+        });
+    }
+
+    public <T extends FormattingAugmentor> void augmentor(String name, Class<T> type) {
+        augmentor(name, type, it -> {});
+    }
+
+    public void toggle(Action<? super ToggleAugmentor> action) {
+        augmentor("toggle", ToggleAugmentor.class, action);
     }
 
     @Inject

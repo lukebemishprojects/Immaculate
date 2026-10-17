@@ -2,7 +2,6 @@ package dev.lukebemish.immaculate;
 
 import org.gradle.api.file.Directory;
 import org.gradle.api.problems.ProblemId;
-import org.gradle.api.problems.ProblemReporter;
 import org.gradle.api.tasks.VerificationException;
 import org.jetbrains.annotations.Nullable;
 
@@ -26,7 +25,7 @@ class DiffProblem {
         }
     }
 
-    public void make(BetterProblemReporter reporter, @Nullable Directory rootPath) {
+    public void make(ProblemReportingHelper reporter, @Nullable Directory rootPath) {
         reporter.throwingLater(
             new DiffException(rootPath),
             DIFF,

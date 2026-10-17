@@ -22,7 +22,7 @@ public class ForkFormatter implements FileFormatter {
             builder.addJvmOption(arg);
         }
         builder.taskClass(spec.getWrapperClass().get());
-        builder.addJvmOption("-cp");;
+        builder.addJvmOption("-cp");
         builder.addJvmOption(spec.getClasspath().getAsPath());
 
         var executorSpec = builder.build();
@@ -31,7 +31,7 @@ public class ForkFormatter implements FileFormatter {
     }
 
     @Override
-    public void close() {
+    public void close(SharedParams params) {
         this.executor.close();
     }
 
