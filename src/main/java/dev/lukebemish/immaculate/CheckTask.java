@@ -22,6 +22,7 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Nested;
+import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
@@ -59,6 +60,9 @@ public abstract class CheckTask extends DefaultTask {
 
     @Nested
     public abstract Property<FormattingStep> getFormattingStep();
+
+    @Internal
+    protected abstract Property<String> getLinkedApplyTaskPath();
 
     @InputFiles
     @Incremental
@@ -102,7 +106,7 @@ public abstract class CheckTask extends DefaultTask {
                                 Files.writeString(outFile.get().getAsFile().toPath(), originalText);
                                 Files.writeString(change.getFile().toPath(), finalText);
                             } else {
-                                new DiffProblem(change.getFile(), diff(originalText, finalText)).make(reporter, getReportIssuesRootPath().getOrNull());
+                                new DiffProblem(change.getFile(), diff(originalText, finalText), getLinkedApplyTaskPath().getOrNull()).make(reporter, getReportIssuesRootPath().getOrNull());
                                 throw new HandledException();
                             }
                         }

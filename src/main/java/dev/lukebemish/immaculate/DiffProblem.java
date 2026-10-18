@@ -13,10 +13,12 @@ class DiffProblem {
 
     private final File file;
     private final CheckTask.DiffData diff;
+    private final @Nullable String linkedApplyPath;
 
-    public DiffProblem(File file, CheckTask.DiffData diff) {
+    public DiffProblem(File file, CheckTask.DiffData diff, @Nullable String linkedApplyPath) {
         this.file = file;
         this.diff = diff;
+        this.linkedApplyPath = linkedApplyPath;
     }
 
     public class DiffException extends VerificationException {
@@ -42,6 +44,9 @@ class DiffProblem {
                     for (int i = edit.getBeginA(); i < edit.getBeginA() + edit.getLengthA(); i++) {
                         spec.lineInFileLocation(filePath, i);
                     }
+                }
+                if (linkedApplyPath != null) {
+                    spec.solution("Run "+linkedApplyPath+" to apply formatting changes");
                 }
             }
         );
