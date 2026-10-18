@@ -46,7 +46,8 @@ public class ProblemReportingHelper {
     }
 
     public RuntimeException throwing(Throwable e, ProblemId id, Action<? super ProblemSpec> config) {
-        return problemReporter.throwing(e, id, config);
+        throwingLater(e, id, config);
+        throw new HandledException();
     }
 
     public void flush(Task task) {
