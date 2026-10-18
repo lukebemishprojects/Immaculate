@@ -160,7 +160,7 @@ public abstract class CheckTask extends DefaultTask {
     }
 
     public CheckTask() {
-        getOutputs().upToDateWhen(t -> true);
+        getOutputs().upToDateWhen(t -> !getApplyFixes().get());
         getApplyFixes().convention(false);
         getOldCopyDirectory().convention(getProject().getLayout().getBuildDirectory().dir("immaculate/"+getName()));
     }
@@ -189,15 +189,6 @@ public abstract class CheckTask extends DefaultTask {
     }
 
     protected void from(FormattingWorkflow workflow) {
-        var wrapper = getObjects().domainObjectContainer(AugmentorStep.class).register(getPath(), step -> {
-            step.getAugmentor().set(getObjects().domainObjectContainer(LineBreakAugmentor.class).register(getPath(), augmentor -> {
-                augmentor.getSteps().addAllLater(workflow.getSteps().getElements());
-            }));
-            step.workflow(workflow);
-        });
-
-        this.getFormattingStep().set(wrapper);
-
         this.getFiles().from(workflow.getFiles());
         getReportIssuesRootPath().set(workflow.getReportIssuesRootPath());
     }

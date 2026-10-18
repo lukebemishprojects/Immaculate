@@ -1,10 +1,14 @@
 package dev.lukebemish.immaculate;
 
+import dev.lukebemish.immaculate.steps.AugmentorStep;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.JavaBasePlugin;
 
-public class ImmaculatePlugin implements Plugin<Project> {
+import javax.inject.Inject;
+
+public abstract class ImmaculatePlugin implements Plugin<Project> {
     public static final String PLUGIN_VERSION = ImmaculatePlugin.class.getPackage().getImplementationVersion();
 
     @Override
@@ -28,7 +32,15 @@ public class ImmaculatePlugin implements Plugin<Project> {
 
         project.afterEvaluate(p -> {
             extension.getWorkflows().forEach(workflow -> {
+                var wrapper = getObjects().domainObjectContainer(AugmentorStep.class).register(workflow.getName()+"Wrapper", step -> {
+                    step.getAugmentor().set(getObjects().domainObjectContainer(CheckTask.LineBreakAugmentor.class).register(workflow.getName()+"Wrapper", augmentor -> {
+                        augmentor.getSteps().addAllLater(workflow.getSteps().getElements());
+                    }));
+                    step.workflow(workflow);
+                });
+
                 var workflowApply = project.getTasks().register(workflow.getName() + "ImmaculateApply", CheckTask.class, task -> {
+                    task.getFormattingStep().set(wrapper);
                     task.getApplyFixes().set(true);
                     task.from(workflow);
                 });
@@ -38,6 +50,7 @@ public class ImmaculatePlugin implements Plugin<Project> {
 
 
                 var workflowCheck = project.getTasks().register(workflow.getName() + "ImmaculateCheck", CheckTask.class, task -> {
+                    task.getFormattingStep().set(wrapper);
                     task.from(workflow);
                     task.mustRunAfter(workflowApply);
                     task.getLinkedApplyTaskPath().set(workflowApply.get().getPath());
@@ -48,4 +61,7 @@ public class ImmaculatePlugin implements Plugin<Project> {
             });
         });
     }
+
+    @Inject
+    protected abstract ObjectFactory getObjects();
 }
