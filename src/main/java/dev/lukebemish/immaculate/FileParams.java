@@ -1,3 +1,5 @@
 package dev.lukebemish.immaculate;
 
-public record FileParams(String fileName, String fileRelativePath, String text, ProblemReportingHelper reporter) {}
+import java.io.File;
+
+public record FileParams(File file, String fileName, String fileDisplayPath, String text, ProblemReportingHelper reporter) {}

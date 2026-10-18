@@ -53,7 +53,7 @@ public abstract class AugmentorStep extends FormattingStep {
                 String text = params.text();
                 var ref = new AtomicReference<T>();
                 try {
-                    text = impl.augment(new FileParams(params.fileName(), params.fileRelativePath(), text, params.reporter()), ref::set);
+                    text = impl.augment(new FileParams(params.file(), params.fileName(), params.fileDisplayPath(), text, params.reporter()), ref::set);
                 } catch (HandledException ignored) {}  catch (Exception e) {
                     VerificationException ve;
                     if (e instanceof VerificationException verificationException) {
@@ -66,14 +66,14 @@ public abstract class AugmentorStep extends FormattingStep {
                         AUGMENT_EXCEPTION,
                         spec -> {
                             spec.contextualLabel("Error from augmentor '" + augmentor.getName() + "'");
-                            spec.fileLocation(params.fileRelativePath());
+                            spec.fileLocation(params.fileDisplayPath());
                         });
                     throw new HandledException();
                 }
 
                 for (var formatter : formatters) {
                     try {
-                        text = formatter.formatter.format(new FileParams(params.fileName(), params.fileRelativePath(), text, params.reporter()));
+                        text = formatter.formatter.format(new FileParams(params.file(), params.fileName(), params.fileDisplayPath(), text, params.reporter()));
                     } catch (HandledException ignored) {}  catch (Exception e) {
                         VerificationException ve;
                         if (e instanceof VerificationException verificationException) {
@@ -86,14 +86,14 @@ public abstract class AugmentorStep extends FormattingStep {
                             FORMATTER_EXCEPTION,
                             spec -> {
                                 spec.contextualLabel("Error from formatter '" + formatter.name() + "'");
-                                spec.fileLocation(params.fileRelativePath());
+                                spec.fileLocation(params.fileDisplayPath());
                             });
                         throw new HandledException();
                     }
                 }
 
                 try {
-                    text = impl.deAugment(new FileParams(params.fileName(), params.fileRelativePath(), text, params.reporter()), ref.get());
+                    text = impl.deAugment(new FileParams(params.file(), params.fileName(), params.fileDisplayPath(), text, params.reporter()), ref.get());
                 } catch (HandledException ignored) {} catch (Exception e) {
                     VerificationException ve;
                     if (e instanceof VerificationException verificationException) {
@@ -106,7 +106,7 @@ public abstract class AugmentorStep extends FormattingStep {
                         DEAUGMENT_EXCEPTION,
                         spec -> {
                             spec.contextualLabel("Error from augmentor '" + augmentor.getName() + "'");
-                            spec.fileLocation(params.fileRelativePath());
+                            spec.fileLocation(params.fileDisplayPath());
                         });
                     throw new HandledException();
                 }

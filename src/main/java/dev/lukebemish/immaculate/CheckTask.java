@@ -22,7 +22,6 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Nested;
-import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
@@ -87,7 +86,7 @@ public abstract class CheckTask extends DefaultTask {
                     try {
                         String originalText = Files.readString(change.getFile().toPath());
                         var finalText = formatter.format(
-                            new FileParams(change.getFile().getName(), relativize(change.getFile()), originalText, reporter)
+                            new FileParams(change.getFile(), change.getFile().getName(), relativize(change.getFile()), originalText, reporter)
                         );
 
                         if (!originalText.equals(finalText)) {
