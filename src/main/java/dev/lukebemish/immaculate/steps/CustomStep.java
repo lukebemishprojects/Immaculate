@@ -5,7 +5,6 @@ import dev.lukebemish.immaculate.FormattingStep;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Nested;
 
-import javax.inject.Inject;
 import java.util.function.UnaryOperator;
 
 public abstract class CustomStep extends FormattingStep {
@@ -15,6 +14,6 @@ public abstract class CustomStep extends FormattingStep {
     @Override
     public FileFormatter formatter() {
         var operator = getAction().get();
-        return (fileName, text) -> operator.apply(text);
+        return (params) -> operator.apply(params.text());
     }
 }

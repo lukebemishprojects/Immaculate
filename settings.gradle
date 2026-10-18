@@ -121,6 +121,21 @@ managedVersioning {
     }
 }
 
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+        maven {
+            name = "Gradle Releases"
+            url = "https://repo.gradle.org/gradle/libs-releases"
+            content {
+                includeGroup "org.gradle.experimental"
+            }
+        }
+    }
+    repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
+    rulesMode = RulesMode.FAIL_ON_PROJECT_RULES
+}
+
 gradle.lifecycle.beforeProject {
     group = 'dev.lukebemish' + (project.path == ':' ? '' : '.immaculate' + project.path.split(':')[0..-2].join('.'))
 
@@ -132,10 +147,6 @@ gradle.lifecycle.beforeProject {
         toolchain.languageVersion.set(JavaLanguageVersion.of(17))
         withSourcesJar()
         withJavadocJar()
-    }
-
-    repositories {
-        mavenCentral()
     }
 
     tasks.register('publishCentral') {

@@ -15,9 +15,9 @@ public abstract class LinewiseStep extends FormattingStep {
 
     @Override
     public FileFormatter formatter() {
-        return (fileName, text) -> {
+        return (params) -> {
             var operator = getAction().get();
-            var lines = text.split("((\r\n)|\n)", -1);
+            var lines = params.text().split("((\r\n)|\n)", -1);
             return Arrays.stream(lines).map(l -> {
                 var n = operator.apply(l);
                 return n == null ? l : n;

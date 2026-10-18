@@ -40,6 +40,7 @@ public class ImmaculatePlugin implements Plugin<Project> {
                 var workflowCheck = project.getTasks().register(workflow.getName() + "ImmaculateCheck", CheckTask.class, task -> {
                     task.from(workflow);
                     task.mustRunAfter(workflowApply);
+                    task.getLinkedApplyTaskPath().set(workflowApply.get().getPath());
                 });
                 checkTask.configure(task -> {
                     task.dependsOn(workflowCheck);
