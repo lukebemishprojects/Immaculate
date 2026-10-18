@@ -47,14 +47,6 @@ import java.util.stream.StreamSupport;
 public abstract class CheckTask extends DefaultTask {
     @ApiStatus.Internal
     public static final ProblemGroup PROBLEM_GROUP = ProblemGroup.create("dev.lukebemish.immaculate", "Formatting Errors");
-    private static final ProblemId FORMATTER_EXCEPTION =
-        ProblemId.create("formatter-exception", "Exception thrown in formatter", PROBLEM_GROUP);
-    private static final ProblemId AUGMENT_EXCEPTION =
-        ProblemId.create("formatter-exception", "Exception thrown while applying augmentor", PROBLEM_GROUP);
-    private static final ProblemId DEAUGMENT_EXCEPTION =
-        ProblemId.create("formatter-exception", "Exception thrown while unapplying augmentor", PROBLEM_GROUP);
-    private static final ProblemId FAILED_TO_CLOSE_FORMATTER =
-        ProblemId.create("failed-to-close-formatter", "Failed to close formatter", PROBLEM_GROUP);
     private static final ProblemId FORMATTING_IO =
         ProblemId.create("formatting-io", "IO issue during formatting", PROBLEM_GROUP);
 
