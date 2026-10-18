@@ -13,10 +13,12 @@ import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer;
 import org.gradle.api.NamedDomainObjectList;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.tasks.Internal;
+import org.jspecify.annotations.Nullable;
 
 import javax.inject.Inject;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 public abstract class StepContainer {
@@ -87,7 +89,7 @@ public abstract class StepContainer {
         step("importOrder", ImportOrderStep.class, action);
     }
 
-    public void custom(String name, UnaryOperator<String> customAction) {
+    public void custom(String name, Function<String, @Nullable String> customAction) {
         step(name, CustomStep.class, it -> it.getAction().set(customAction));
     }
 
