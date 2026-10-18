@@ -65,7 +65,7 @@ public abstract class AugmentorStep extends FormattingStep {
                         ve,
                         AUGMENT_EXCEPTION,
                         spec -> {
-                            spec.contextualLabel("Error from augmentor '" + augmentor.getName() + "'");
+                            spec.contextualLabel("Error from augmentor '" + augmentor.getName() + "': " + e.getMessage());
                             spec.fileLocation(params.fileDisplayPath());
                         });
                     throw new HandledException();
@@ -85,7 +85,7 @@ public abstract class AugmentorStep extends FormattingStep {
                             ve,
                             FORMATTER_EXCEPTION,
                             spec -> {
-                                spec.contextualLabel("Error from formatter '" + formatter.name() + "'");
+                                spec.contextualLabel("Error from formatter '" + formatter.name() + "': " + e.getMessage());
                                 spec.fileLocation(params.fileDisplayPath());
                             });
                         throw new HandledException();
@@ -105,7 +105,7 @@ public abstract class AugmentorStep extends FormattingStep {
                         ve,
                         DEAUGMENT_EXCEPTION,
                         spec -> {
-                            spec.contextualLabel("Error from augmentor '" + augmentor.getName() + "'");
+                            spec.contextualLabel("Error from augmentor '" + augmentor.getName() + "': " + e.getMessage());
                             spec.fileLocation(params.fileDisplayPath());
                         });
                     throw new HandledException();
@@ -125,7 +125,7 @@ public abstract class AugmentorStep extends FormattingStep {
                             e,
                             FAILED_TO_CLOSE_FORMATTER,
                             spec -> {
-                                spec.contextualLabel("Error from formatter '" + formatter.name() + "'");
+                                spec.contextualLabel("Error from formatter '" + formatter.name() + "': " + e.getMessage());
                             }
                         );
                     }
@@ -137,7 +137,7 @@ public abstract class AugmentorStep extends FormattingStep {
                         e,
                         FAILED_TO_CLOSE_AUGMENTOR,
                         spec -> {
-                            spec.contextualLabel("Error from augmentor '" + augmentor.getName() + "'");
+                            spec.contextualLabel("Error from augmentor '" + augmentor.getName() + "': " + e.getMessage());
                         }
                     );
                 }
