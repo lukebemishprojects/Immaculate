@@ -6,6 +6,7 @@ import dev.lukebemish.immaculate.FormattingAugmentor;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -15,11 +16,21 @@ public abstract class ToggleAugmentor extends FormattingAugmentor {
     public abstract Property<String> getOff();
     @Input
     public abstract Property<String> getOn();
+    @Input
+    public abstract Property<Boolean> getElideContents();
+
+    @Inject
+    public ToggleAugmentor() {
+        getOff().convention("immaculate:off");
+        getOn().convention("immaculate:on");
+        getElideContents().convention(false);
+    }
 
     @Override
     public FileAugmentor<?> augmentor() {
         var toggleOn = getOn().get();
         var toggleOff = getOff().get();
+        var elideContents = getElideContents().get();
         return new FileAugmentor<List<String>>() {
             @Override
             public String augment(FileParams params, Consumer<List<String>> store) {
@@ -39,7 +50,9 @@ public abstract class ToggleAugmentor extends FormattingAugmentor {
                             String suffix = ":" + excluded.size();
                             parts.add(text.substring(oldIndex, startIndex) + suffix);
                             excluded.add(text.substring(startIndex, nextIndex));
-                            parts.add(text.substring(startIndex, nextIndex) + suffix);
+                            if (!elideContents) {
+                                parts.add(text.substring(startIndex, nextIndex) + suffix);
+                            }
                             index = nextIndex;
                         } else {
                             throw new RuntimeException("Mismatched toggle");
@@ -65,17 +78,22 @@ public abstract class ToggleAugmentor extends FormattingAugmentor {
                     if (start == -1) {
                         throw new RuntimeException("Could not recover toggle block");
                     }
-                    int end = text.indexOf(toggleOn + ':' + i, start);
-                    if (end == -1) {
-                        throw new RuntimeException("Could not recover toggle block");
+                    if (elideContents) {
+                        int startIndex = start + toggleOff.length() + (":" + i).length();
+                        text = text.substring(0, start) + toggleOff + excluded.get(i) + text.substring(startIndex);
+                    } else {
+                        int end = text.indexOf(toggleOn + ':' + i, start);
+                        if (end == -1) {
+                            throw new RuntimeException("Could not recover toggle block");
+                        }
+                        int startIndex = start + toggleOff.length() + (":" + i).length();
+                        int nextIndex = end + toggleOn.length() + (":" + i).length();
+                        String inner = text.substring(startIndex, end);
+                        if (inner.contains(toggleOff) || inner.contains(toggleOn)) {
+                            throw new RuntimeException("Mismatched toggle");
+                        }
+                        text = text.substring(0, start) + toggleOff + excluded.get(i) + text.substring(nextIndex);
                     }
-                    int startIndex = start + toggleOff.length() + (":" + i).length();
-                    int nextIndex = end + toggleOn.length() + (":" + i).length();
-                    String inner = text.substring(startIndex, end);
-                    if (inner.contains(toggleOff) || inner.contains(toggleOn)) {
-                        throw new RuntimeException("Mismatched toggle");
-                    }
-                    text = text.substring(0, start) + toggleOff + excluded.get(i) + text.substring(nextIndex);
                 }
 
                 return text;

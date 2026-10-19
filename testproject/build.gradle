@@ -17,35 +17,43 @@ immaculate {
     workflows.register('java') {
         java()
         toggle {
-            off = 'spotless:off'
-            on = 'spotless:on'
+            elideContents = true
 
-            noTabs()
-            google {
-                removeUnusedImports()
-            }
-            importOrder {
-                config = file('ordering.importorder')
-            }
-            trailingNewline()
-            /*eclipse {
+            toggle {
+                off = 'spotless:off'
+                on = 'spotless:on'
+
+                noTabs()
+                google {
+                    removeUnusedImports()
+                }
+                importOrder {
+                    config = file('ordering.importorder')
+                }
+                trailingNewline()
+                /*eclipse {
                 config = project.file('eclipse-options.xml')
             }*/
 
-            linewise('noWildcardImports') {
-                if (it.endsWith('*;')) {
-                    throw new GradleException('No wildcard imports are allowed!')
+                custom('log') {
+                    println it
                 }
-            }
 
-            linewise('noNotNull') {
-                if (it.contains('@NotNull') || it.contains('@Nonnull')) {
-                    throw new GradleException('@NotNull and @Nonnull are disallowed.')
+                linewise('noWildcardImports') {
+                    if (it.endsWith('*;')) {
+                        throw new GradleException('No wildcard imports are allowed!')
+                    }
                 }
-            }
 
-            linewise('jetbrainsNullable') {
-                it.replace('javax.annotation.Nullable', 'org.jetbrains.annotations.Nullable')
+                linewise('noNotNull') {
+                    if (it.contains('@NotNull') || it.contains('@Nonnull')) {
+                        throw new GradleException('@NotNull and @Nonnull are disallowed.')
+                    }
+                }
+
+                linewise('jetbrainsNullable') {
+                    it.replace('javax.annotation.Nullable', 'org.jetbrains.annotations.Nullable')
+                }
             }
         }
     }

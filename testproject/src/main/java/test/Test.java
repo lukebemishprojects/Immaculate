@@ -12,6 +12,10 @@ import test.anotherpackage.ToImport; // retains comments
 import java.util.function.Function;
 // spotless:on
 
+// immaculate:off
+import java.util.function.Function;
+// immaculate:on
+
 public class Test {
     int i;
 
