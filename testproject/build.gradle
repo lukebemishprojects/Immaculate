@@ -16,43 +16,45 @@ immaculate {
 
     workflows.register('java') {
         java()
-        toggle {
-            elideContents = true
-
+        ignoreLines {
             toggle {
-                off = 'spotless:off'
-                on = 'spotless:on'
+                elideContents = true
 
-                noTabs()
-                google {
-                    removeUnusedImports()
-                }
-                importOrder {
-                    config = file('ordering.importorder')
-                }
-                trailingNewline()
-                /*eclipse {
-                config = project.file('eclipse-options.xml')
-            }*/
+                toggle {
+                    off = 'spotless:off'
+                    on = 'spotless:on'
 
-                custom('log') {
-                    println it
-                }
-
-                linewise('noWildcardImports') {
-                    if (it.endsWith('*;')) {
-                        throw new GradleException('No wildcard imports are allowed!')
+                    noTabs()
+                    google {
+                        removeUnusedImports()
                     }
-                }
-
-                linewise('noNotNull') {
-                    if (it.contains('@NotNull') || it.contains('@Nonnull')) {
-                        throw new GradleException('@NotNull and @Nonnull are disallowed.')
+                    importOrder {
+                        config = file('ordering.importorder')
                     }
-                }
+                    trailingNewline()
+                    /*eclipse {
+                        config = project.file('eclipse-options.xml')
+                    }*/
 
-                linewise('jetbrainsNullable') {
-                    it.replace('javax.annotation.Nullable', 'org.jetbrains.annotations.Nullable')
+                    custom('log') {
+                        println it
+                    }
+
+                    linewise('noWildcardImports') {
+                        if (it.endsWith('*;')) {
+                            throw new GradleException('No wildcard imports are allowed!')
+                        }
+                    }
+
+                    linewise('noNotNull') {
+                        if (it.contains('@NotNull') || it.contains('@Nonnull')) {
+                            throw new GradleException('@NotNull and @Nonnull are disallowed.')
+                        }
+                    }
+
+                    linewise('jetbrainsNullable') {
+                        it.replace('javax.annotation.Nullable', 'org.jetbrains.annotations.Nullable')
+                    }
                 }
             }
         }

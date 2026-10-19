@@ -1,5 +1,6 @@
 package dev.lukebemish.immaculate;
 
+import dev.lukebemish.immaculate.augmentors.IgnoreAugmentor;
 import dev.lukebemish.immaculate.augmentors.ToggleAugmentor;
 import dev.lukebemish.immaculate.steps.AugmentorStep;
 import dev.lukebemish.immaculate.steps.CustomStep;
@@ -116,6 +117,10 @@ public abstract class StepContainer {
 
     public void toggle(Action<? super ToggleAugmentor> action) {
         augmentor("toggle", ToggleAugmentor.class, action);
+    }
+
+    public void ignoreLines(Action<? super IgnoreAugmentor> action) {
+        augmentor("ignoreLines", IgnoreAugmentor.class, action);
     }
 
     @Inject
