@@ -19,21 +19,16 @@ public abstract class IgnoreAugmentor extends FormattingAugmentor {
     @Input
     public abstract Property<String> getTemplate();
 
-    @Input
-    public abstract Property<String> getTemplatePattern();
-
     @Inject
     public IgnoreAugmentor() {
         getTag().convention("immaculate:ignore");
         getTemplate().convention("//%s");
-        getTemplatePattern().convention("//\\s*%s");
     }
 
     @Override
     public FileAugmentor<?> augmentor() {
         var tag = getTag().get();
         var template = getTemplate().get();
-        var templatePattern = getTemplatePattern().get();
         return new FileAugmentor<List<String>>() {
             @Override
             public String augment(FileParams params, Consumer<List<String>> store) {
@@ -46,7 +41,7 @@ public abstract class IgnoreAugmentor extends FormattingAugmentor {
                     if (line.contains(tag)) {
                         var indent = calculateIndent(line);
                         outLines.add(indent + String.format(template, tag+":"+idx));
-                        excluded.add(line.substring(indent.length()));
+                        excluded.add(line);
                         idx++;
                     } else {
                         outLines.add(line);
@@ -78,13 +73,8 @@ public abstract class IgnoreAugmentor extends FormattingAugmentor {
                         var idxMatch = INT.matcher(after);
                         idxMatch.find();
                         var idxStr = idxMatch.group(0);
-                        var wholeTagMatch = Pattern.compile(String.format(templatePattern, Pattern.quote(tag+":"+idxStr))+"$")
-                            .matcher(line);
-                        wholeTagMatch.find();
-                        var wholeTag = wholeTagMatch.group(0);
-                        var before = line.substring(0, line.length() - wholeTag.length());
                         var iIdx = Integer.parseInt(idxStr);
-                        outLines.add(before + value.get(iIdx));
+                        outLines.add(value.get(iIdx));
                         found[iIdx] = true;
                     } else {
                         outLines.add(line);
