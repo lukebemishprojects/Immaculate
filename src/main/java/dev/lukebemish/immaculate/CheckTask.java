@@ -1,5 +1,6 @@
 package dev.lukebemish.immaculate;
 
+import dev.lukebemish.immaculate.steps.AugmentorStep;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.diff.DiffFormatter;
@@ -11,41 +12,48 @@ import org.gradle.api.DefaultTask;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.FileType;
-import org.gradle.api.file.RegularFileProperty;
-import org.gradle.api.logging.configuration.LoggingConfiguration;
-import org.gradle.api.logging.configuration.ShowStacktrace;
-import org.gradle.api.provider.ListProperty;
+import org.gradle.api.model.ObjectFactory;
+import org.gradle.api.problems.ProblemGroup;
+import org.gradle.api.problems.ProblemId;
+import org.gradle.api.problems.Problems;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Nested;
-import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.work.ChangeType;
 import org.gradle.work.Incremental;
 import org.gradle.work.InputChanges;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.inject.Inject;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
-import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.StreamSupport;
 
 @CacheableTask
 public abstract class CheckTask extends DefaultTask {
+    @ApiStatus.Internal
+    public static final ProblemGroup PROBLEM_GROUP = ProblemGroup.create("dev.lukebemish.immaculate", "Formatting Errors");
+    private static final ProblemId FORMATTING_IO =
+        ProblemId.create("formatting-io", "IO issue during formatting", PROBLEM_GROUP);
+
     @Nested
-    public abstract ListProperty<FormattingStep> getSteps();
+    public abstract Property<FormattingStep> getFormattingStep();
+
+    @Internal
+    protected abstract Property<String> getLinkedApplyTaskPath();
 
     @InputFiles
     @Incremental
@@ -58,21 +66,8 @@ public abstract class CheckTask extends DefaultTask {
     @Internal
     public abstract DirectoryProperty getOldCopyDirectory();
 
-    @Input
-    @Optional
-    public abstract Property<String> getToggleOff();
-
-    @Input
-    @Optional
-    public abstract Property<String> getToggleOn();
-
     @Internal
-    public abstract Property<Boolean> getTruncateExceptions();
-
-    @Internal
-    public abstract RegularFileProperty getReportIssuesRootPath();
-
-    private record NamedFormatter(String name, FileFormatter formatter) {}
+    public abstract DirectoryProperty getReportIssuesRootPath();
 
     private static final DateFormat OLD_FILE_DATE_FORMAT = new SimpleDateFormat("yyyyMMddHHmmss");
 
@@ -81,137 +76,70 @@ public abstract class CheckTask extends DefaultTask {
         if (getApplyFixes().get()) {
             FileUtils.deleteDirectory(getOldCopyDirectory().get().getAsFile());
         }
-        List<NamedFormatter> formatters = getSteps().get().stream().map(step -> new NamedFormatter(step.getName(), step.formatter())).toList();
-        List<Exception> exceptions = Collections.synchronizedList(new ArrayList<>());
-        StreamSupport.stream(inputs.getFileChanges(getFiles()).spliterator(), true).forEach(change -> {
-            if (change.getChangeType() != ChangeType.REMOVED && change.getFileType() == FileType.FILE) {
-                try {
-                    String originalText = Files.readString(change.getFile().toPath());
-                    String text = originalText;
 
-                    // Grab toggles
-                    int index = 0;
-                    List<String> parts = new ArrayList<>();
-                    List<String> excluded = new ArrayList<>();
-                    if (getToggleOff().isPresent() && getToggleOn().isPresent()) {
-                        while (index < text.length()) {
-                            int oldIndex = index;
-                            index = text.indexOf(getToggleOff().get(), index);
-                            if (index != -1) {
-                                int end = text.indexOf(getToggleOn().get(), index);
-                                if (end != -1) {
-                                    int startIndex = index + getToggleOff().get().length();
-                                    int nextIndex = end + getToggleOn().get().length();
-                                    String suffix = ":" + excluded.size();
-                                    parts.add(text.substring(oldIndex, startIndex) + suffix);
-                                    excluded.add(text.substring(startIndex, nextIndex));
-                                    parts.add(text.substring(startIndex, nextIndex) + suffix);
-                                    index = nextIndex;
-                                } else {
-                                    throw new FormattingException(change.getFile(), "Mismatched toggle");
-                                }
+        var formatter = getFormattingStep().get().formatter();
+
+        final var reporter = new ProblemReportingHelper(getProblems().getReporter());
+        try {
+            StreamSupport.stream(inputs.getFileChanges(getFiles()).spliterator(), true).forEach(change -> {
+                if (change.getChangeType() != ChangeType.REMOVED && change.getFileType() == FileType.FILE) {
+                    try {
+                        String originalText = Files.readString(change.getFile().toPath());
+                        var finalText = formatter.format(
+                            new FileParams(change.getFile(), change.getFile().getName(), relativize(change.getFile()), originalText, reporter)
+                        );
+
+                        if (!originalText.equals(finalText)) {
+                            if (getApplyFixes().get()) {
+                                var timestamp = OLD_FILE_DATE_FORMAT.format(new Date());
+                                var outFile = getOldCopyDirectory().file(change.getFile().getName() + "." + timestamp + DigestUtils.md5Hex(originalText));
+                                Files.createDirectories(outFile.get().getAsFile().toPath().getParent());
+                                Files.writeString(outFile.get().getAsFile().toPath(), originalText);
+                                Files.writeString(change.getFile().toPath(), finalText);
                             } else {
-                                parts.add(text.substring(oldIndex));
-                                break;
+                                new DiffProblem(change.getFile(), diff(originalText, finalText), getLinkedApplyTaskPath().getOrNull()).make(reporter, getReportIssuesRootPath().getOrNull());
+                                throw new HandledException();
                             }
                         }
-                        text = String.join("", parts);
-                    }
-
-
-                    boolean crlf = text.contains("\r\n");
-                    final var finalText = new String[] {text};
-                    formatters.forEach(formatter -> {
-                        String newText;
-                        try {
-                            newText = formatter.formatter.format(change.getFile().getName(), finalText[0]);
-                        } catch (Exception e) {
-                            throw new FormattingException(change.getFile(), "Error at step "+formatter.name(), e);
-                        }
-                        if (newText != null && !finalText[0].equals(newText)) {
-                            finalText[0] = newText;
-                        }
-                    });
-                    finalText[0] = finalText[0].replace("\r\n", "\n");
-                    if (crlf) {
-                        finalText[0] = finalText[0].replace("\n", "\r\n");
-                    }
-
-                    // Replace toggles
-                    if (getToggleOff().isPresent() && getToggleOn().isPresent()) {
-                        for (int i = 0; i < excluded.size(); i++) {
-                            int start = finalText[0].indexOf(getToggleOff().get() + ':' + i);
-                            if (start == -1) {
-                                throw new FormattingException(change.getFile(), "Could not recover toggle block");
+                    } catch (IOException e) {
+                        // Fail-fast -- this is generally speaking _bad_
+                        throw reporter.throwing(
+                            e,
+                            FORMATTING_IO,
+                            spec -> {
+                                spec.fileLocation(relativize(change.getFile()));
                             }
-                            int end = finalText[0].indexOf(getToggleOn().get() + ':' + i, start);
-                            if (end == -1) {
-                                throw new FormattingException(change.getFile(), "Could not recover toggle block");
-                            }
-                            int startIndex = start + getToggleOff().get().length() + (":"+i).length();
-                            int nextIndex = end + getToggleOn().get().length() + (":"+i).length();
-                            String inner = finalText[0].substring(startIndex, end);
-                            if (inner.contains(getToggleOff().get()) || inner.contains(getToggleOn().get())) {
-                                throw new FormattingException(change.getFile(), "Mismatched toggle");
-                            }
-                            finalText[0] = finalText[0].substring(0, start) + getToggleOff().get() + excluded.get(i) + finalText[0].substring(nextIndex);
-                        }
-                    }
-
-                    if (!originalText.equals(finalText[0])) {
-                        if (getApplyFixes().get()) {
-                            var timestamp = OLD_FILE_DATE_FORMAT.format(new Date());
-                            var outFile = getOldCopyDirectory().file(change.getFile().getName()+"."+timestamp+DigestUtils.md5Hex(originalText));
-                            Files.createDirectories(outFile.get().getAsFile().toPath().getParent());
-                            Files.writeString(outFile.get().getAsFile().toPath(), originalText);
-                            Files.writeString(change.getFile().toPath(), finalText[0]);
-                        } else {
-                            throw new FormattingException(change.getFile(), "File does not match formatting", diff(originalText, finalText[0]));
-                        }
-                    }
-                } catch (Exception e) {
-                    synchronized (exceptions) {
-                        exceptions.add(e);
-                    }
+                        );
+                    } catch (HandledException ignored) {}
                 }
-            }
-        });
-        for (NamedFormatter formatter : formatters) {
+            });
+        } finally {
             try {
-                formatter.formatter.close();
-            } catch (Exception e) {
-                exceptions.add(e);
+                formatter.close(new SharedParams(reporter));
+            } catch (HandledException ignored) {} finally {
+                reporter.flush(this);
             }
         }
-        if (!exceptions.isEmpty()) {
-            RuntimeException exception;
-            if (exceptions.size() > 5 && getTruncateExceptions().orElse(getLoggingConfiguration().getShowStacktrace() == ShowStacktrace.INTERNAL_EXCEPTIONS).get()) {
-                exception = new RuntimeException("Exceptions occurred during formatting; see log for details (first 5 shown; others truncated...");
-                for (int i = 0; i < 5; i++) {
-                    printFormattingException(exceptions.get(i));
-                }
-                exceptions.forEach(exception::addSuppressed);
-            } else {
-                exception = new RuntimeException("Exceptions occurred during formatting; see log for details");
-                exceptions.forEach(this::printFormattingException);
-                exceptions.forEach(exception::addSuppressed);
-            }
-            throw exception;
+    }
+
+    private String relativize(File file) {
+        var rootPath = getReportIssuesRootPath().getOrNull();
+        if (rootPath == null) {
+            return file.getPath();
+        } else {
+            return rootPath.getAsFile().toPath().relativize(file.toPath()).toString();
         }
     }
 
     @Inject
-    protected abstract LoggingConfiguration getLoggingConfiguration();
+    protected abstract Problems getProblems();
 
-    private void printFormattingException(Exception e) {
-        if (e instanceof FormattingException formattingException) {
-            System.out.println(formattingException.format(getReportIssuesRootPath().getAsFile().getOrNull()));
-        } else {
-            System.err.println(e);
-        }
-    }
+    @Inject
+    protected abstract ObjectFactory getObjects();
 
-    private static String diff(String oldString, String newString) throws IOException {
+    record DiffData(String pretty, EditList edits) {}
+
+    private static DiffData diff(String oldString, String newString) throws IOException {
         RawText oldText = new RawText(makeVisible(oldString).getBytes(StandardCharsets.UTF_8));
         RawText newText = new RawText(makeVisible(newString).getBytes(StandardCharsets.UTF_8));
         EditList edits = new EditList();
@@ -224,7 +152,7 @@ public abstract class CheckTask extends DefaultTask {
         try (DiffFormatter formatter = new DiffFormatter(out)) {
             formatter.format(edits, oldText, newText);
         }
-        return out.toString(StandardCharsets.UTF_8);
+        return new DiffData(out.toString(StandardCharsets.UTF_8), edits);
     }
 
     private static String makeVisible(String text) {
@@ -232,17 +160,36 @@ public abstract class CheckTask extends DefaultTask {
     }
 
     public CheckTask() {
-        getOutputs().upToDateWhen(t -> true);
+        getOutputs().upToDateWhen(t -> !getApplyFixes().get());
         getApplyFixes().convention(false);
         getOldCopyDirectory().convention(getProject().getLayout().getBuildDirectory().dir("immaculate/"+getName()));
     }
 
+    @ApiStatus.Internal
+    public static abstract class LineBreakAugmentor extends FormattingAugmentor {
+        @Override
+        public FileAugmentor<?> augmentor() {
+            return new FileAugmentor<Boolean>() {
+                @Override
+                public String augment(FileParams params, Consumer<Boolean> store) {
+                    store.accept(params.text().contains("\r\n"));
+                    return params.text().replace("\r\n", "\n");
+                }
+
+                @Override
+                public String deAugment(FileParams params, Boolean crlf) {
+                    var text = params.text().replace("\r\n", "\n");
+                    if (crlf) {
+                        text = text.replace("\n", "\r\n");
+                    }
+                    return text;
+                }
+            };
+        }
+    }
+
     protected void from(FormattingWorkflow workflow) {
-        this.getSteps().set(workflow.getSteps());
         this.getFiles().from(workflow.getFiles());
-        this.getToggleOff().set(workflow.getToggleOff());
-        this.getToggleOn().set(workflow.getToggleOn());
-        getTruncateExceptions().set(workflow.getTruncateExceptions());
         getReportIssuesRootPath().set(workflow.getReportIssuesRootPath());
     }
 }

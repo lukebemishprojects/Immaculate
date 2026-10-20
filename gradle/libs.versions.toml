@@ -3,9 +3,12 @@
 google-java-format="1.35.0"
 palantir-java-format="2.96.0"
 eclipse-jdt="3.46.0"
+gradle="9.8.1"
 
 [libraries]
 
 google-java-format={ group = "com.google.googlejavaformat", name = "google-java-format", version.ref = "google-java-format" }
 palantir-java-format={ group = "com.palantir.javaformat", name = "palantir-java-format", version.ref = "palantir-java-format" }
 eclipse-jdt={ group = "org.eclipse.jdt", name = "org.eclipse.jdt.core", version.ref = "eclipse-jdt" }
+
+gradle = { module = "org.gradle.experimental:gradle-public-api", version.ref = "gradle" }
