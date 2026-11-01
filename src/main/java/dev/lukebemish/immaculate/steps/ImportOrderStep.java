@@ -49,7 +49,7 @@ public abstract class ImportOrderStep extends FormattingStep {
 
         var pattern = Pattern.compile("^import\\s+([^\\s;]+)");
 
-        return (fileName, text) -> {
+        return (params) -> {
             int firstImportLine = -1;
             int lastImportLine = -1;
             int lineNumber = -1;
@@ -59,7 +59,7 @@ public abstract class ImportOrderStep extends FormattingStep {
 
             List<ImportInfo> imports = new ArrayList<>();
 
-            var lines = text.lines().toList();
+            var lines = params.text().lines().toList();
 
             for (var line : lines) {
                 lineNumber++;

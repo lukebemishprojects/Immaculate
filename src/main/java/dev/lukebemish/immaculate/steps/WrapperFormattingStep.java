@@ -2,6 +2,7 @@ package dev.lukebemish.immaculate.steps;
 
 import dev.lukebemish.immaculate.FileFormatter;
 import dev.lukebemish.immaculate.ForkFormatterSpec;
+import dev.lukebemish.immaculate.ImmaculateExtension;
 import dev.lukebemish.immaculate.ImmaculatePlugin;
 import dev.lukebemish.immaculate.ForkFormatter;
 import org.gradle.api.logging.configuration.LoggingConfiguration;
@@ -25,6 +26,7 @@ public abstract class WrapperFormattingStep extends ExternalFormattingStep {
                 );
             }
         });
+        this.getJavaLauncher().convention(getProject().getExtensions().getByType(ImmaculateExtension.class).getDefaultJavaLauncher());
     }
 
     @Internal

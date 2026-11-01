@@ -8,23 +8,28 @@ plugins {
     id 'java-gradle-plugin'
 }
 
-def gradleVersion = "8.8"
-
 ['apiElements', 'runtimeElements'].each {
     configurations.named(it).configure {
         attributes {
             attribute(
                     GradlePluginApiVersion.GRADLE_PLUGIN_API_VERSION_ATTRIBUTE,
-                    objects.named(GradlePluginApiVersion, gradleVersion)
+                    objects.named(GradlePluginApiVersion, libs.versions.gradle.get())
             )
         }
     }
 }
 
 dependencies {
-    compileOnly "dev.gradleplugins:gradle-api:$gradleVersion"
+    compileOnly cLibs.bundles.compileonly
+    compileOnly(libs.gradle) {
+        capabilities {
+            requireFeature "internal"
+        }
+    }
     implementation 'commons-io:commons-io:2.22.0'
-    implementation 'org.eclipse.jgit:org.eclipse.jgit:7.7.0.202606012155-r'
+    implementation('org.eclipse.jgit:org.eclipse.jgit:7.8.0.202609011348-r') {
+        exclude(group: 'org.slf4j', module: 'slf4j-api')
+    }
     implementation 'dev.lukebemish:forkedtaskexecutor:0.1.4'
 }
 
@@ -48,6 +53,7 @@ gradlePlugin {
             compatibility {
                 features {
                     configurationCache = true
+                    isolatedProjects = true
                 }
             }
         }

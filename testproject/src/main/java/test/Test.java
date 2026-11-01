@@ -12,6 +12,12 @@ import test.anotherpackage.ToImport; // retains comments
 import java.util.function.Function;
 // spotless:on
 
+// immaculate:off
+import java.util.function.Function;
+// immaculate:on
+
+import java.util.function.Function; // immaculate:ignore
+
 public class Test {
     int i;
 
@@ -24,5 +30,6 @@ public class Test {
         clazz = List.class;
         clazz = JavaCompiler.class;
         clazz = ToImport.class;
+        clazz = ToImport.class; // immaculate:ignore
     }
 }
