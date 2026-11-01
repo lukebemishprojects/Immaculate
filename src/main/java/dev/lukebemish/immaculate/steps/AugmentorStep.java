@@ -8,7 +8,6 @@ import dev.lukebemish.immaculate.FormattingStep;
 import dev.lukebemish.immaculate.FormattingWorkflow;
 import dev.lukebemish.immaculate.HandledException;
 import dev.lukebemish.immaculate.SharedParams;
-import org.gradle.api.problems.ProblemId;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.VerificationException;
@@ -17,20 +16,7 @@ import org.jspecify.annotations.Nullable;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static dev.lukebemish.immaculate.CheckTask.PROBLEM_GROUP;
-
 public abstract class AugmentorStep extends FormattingStep {
-    private static final ProblemId FORMATTER_EXCEPTION =
-        ProblemId.create("formatter-exception", "Exception thrown in formatter", PROBLEM_GROUP);
-    private static final ProblemId AUGMENT_EXCEPTION =
-        ProblemId.create("formatter-exception", "Exception thrown while applying augmentor", PROBLEM_GROUP);
-    private static final ProblemId DEAUGMENT_EXCEPTION =
-        ProblemId.create("formatter-exception", "Exception thrown while unapplying augmentor", PROBLEM_GROUP);
-    private static final ProblemId FAILED_TO_CLOSE_FORMATTER =
-        ProblemId.create("failed-to-close-formatter", "Failed to close formatter", PROBLEM_GROUP);
-    private static final ProblemId FAILED_TO_CLOSE_AUGMENTOR =
-        ProblemId.create("failed-to-close-augmentor", "Failed to close augmentor", PROBLEM_GROUP);
-
     @Nested
     public abstract Property<FormattingAugmentor> getAugmentor();
 
@@ -63,7 +49,7 @@ public abstract class AugmentorStep extends FormattingStep {
                     }
                     params.reporter().throwingLater(
                         ve,
-                        AUGMENT_EXCEPTION,
+                        params.reporter().immaculateGroup().problemId("Exception thrown while applying augmentor"),
                         spec -> {
                             spec.contextualLabel("Error from augmentor '" + augmentor.getName() + "': " + e.getMessage());
                             spec.fileLocation(params.fileDisplayPath());
@@ -83,7 +69,7 @@ public abstract class AugmentorStep extends FormattingStep {
                         }
                         params.reporter().throwingLater(
                             ve,
-                            FORMATTER_EXCEPTION,
+                            params.reporter().immaculateGroup().problemId("Exception thrown while running formatter"),
                             spec -> {
                                 spec.contextualLabel("Error from formatter '" + formatter.name() + "': " + e.getMessage());
                                 spec.fileLocation(params.fileDisplayPath());
@@ -103,7 +89,7 @@ public abstract class AugmentorStep extends FormattingStep {
                     }
                     params.reporter().throwingLater(
                         ve,
-                        DEAUGMENT_EXCEPTION,
+                        params.reporter().immaculateGroup().problemId("Exception thrown while unapplying augmentor"),
                         spec -> {
                             spec.contextualLabel("Error from augmentor '" + augmentor.getName() + "': " + e.getMessage());
                             spec.fileLocation(params.fileDisplayPath());
@@ -123,7 +109,7 @@ public abstract class AugmentorStep extends FormattingStep {
                     } catch (HandledException ignored) {}  catch (Exception e) {
                         params.reporter().throwingLater(
                             e,
-                            FAILED_TO_CLOSE_FORMATTER,
+                            params.reporter().immaculateGroup().problemId("Exception thrown while closing formatter"),
                             spec -> {
                                 spec.contextualLabel("Error from formatter '" + formatter.name() + "': " + e.getMessage());
                             }
@@ -135,7 +121,7 @@ public abstract class AugmentorStep extends FormattingStep {
                 } catch (HandledException ignored) {}  catch (Exception e) {
                     params.reporter().throwingLater(
                         e,
-                        FAILED_TO_CLOSE_AUGMENTOR,
+                        params.reporter().immaculateGroup().problemId("Exception thrown while closing augmentor"),
                         spec -> {
                             spec.contextualLabel("Error from augmentor '" + augmentor.getName() + "': " + e.getMessage());
                         }

@@ -4,27 +4,32 @@ import org.gradle.api.Action;
 import org.gradle.api.ProjectConfigurationException;
 import org.gradle.api.Task;
 import org.gradle.api.problems.ProblemId;
-import org.gradle.api.problems.ProblemReporter;
 import org.gradle.api.problems.ProblemSpec;
+import org.gradle.api.problems.Problems;
+import org.gradle.api.problems.ThirdLevelProblemGroup;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 public class ProblemReportingHelper {
-    private final ProblemReporter problemReporter;
+    private final Problems problems;
     private final List<RuntimeException> suppressed = Collections.synchronizedList(new ArrayList<>());
 
-    ProblemReportingHelper(ProblemReporter problemReporter) {
-        this.problemReporter = problemReporter;
+    ProblemReportingHelper(Problems problems) {
+        this.problems = problems;
     }
 
-    public ProblemReporter reporter() {
-        return problemReporter;
+    public Problems problems() {
+        return problems;
+    }
+
+    public ThirdLevelProblemGroup immaculateGroup() {
+        return problems.getGroups().getVerification().getCodeQuality().group("Immaculate Formatting");
     }
 
     public void report(ProblemId id, Action<? super ProblemSpec> config) {
-        problemReporter.report(id, config);
+        problems.getReporter().report(id, config);
     }
 
     public RuntimeException error(Throwable e, ProblemId id, Action<? super ProblemSpec> config) {
@@ -39,7 +44,7 @@ public class ProblemReportingHelper {
     public void throwingLater(Throwable e, ProblemId id, Action<? super ProblemSpec> config) {
         RuntimeException re;
         try {
-            re = problemReporter.throwing(e, id, config);
+            re = problems.getReporter().throwing(e, id, config);
         } catch (RuntimeException runtimeException) {
             re = runtimeException;
         }

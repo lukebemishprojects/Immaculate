@@ -12,8 +12,6 @@ import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.FileType;
 import org.gradle.api.model.ObjectFactory;
-import org.gradle.api.problems.ProblemGroup;
-import org.gradle.api.problems.ProblemId;
 import org.gradle.api.problems.Problems;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.CacheableTask;
@@ -43,11 +41,6 @@ import java.util.stream.StreamSupport;
 
 @CacheableTask
 public abstract class CheckTask extends DefaultTask {
-    @ApiStatus.Internal
-    public static final ProblemGroup PROBLEM_GROUP = ProblemGroup.create("dev.lukebemish.immaculate", "Formatting Errors");
-    private static final ProblemId FORMATTING_IO =
-        ProblemId.create("formatting-io", "IO issue during formatting", PROBLEM_GROUP);
-
     @Nested
     public abstract Property<FormattingStep> getFormattingStep();
 
@@ -78,7 +71,7 @@ public abstract class CheckTask extends DefaultTask {
 
         var formatter = getFormattingStep().get().formatter();
 
-        final var reporter = new ProblemReportingHelper(getProblems().getReporter());
+        final var reporter = new ProblemReportingHelper(getProblems());
         try {
             StreamSupport.stream(inputs.getFileChanges(getFiles()).spliterator(), true).forEach(change -> {
                 if (change.getChangeType() != ChangeType.REMOVED && change.getFileType() == FileType.FILE) {
@@ -96,15 +89,14 @@ public abstract class CheckTask extends DefaultTask {
                                 Files.writeString(outFile.get().getAsFile().toPath(), originalText);
                                 Files.writeString(change.getFile().toPath(), finalText);
                             } else {
-                                new DiffProblem(change.getFile(), diff(originalText, finalText), getLinkedApplyTaskPath().getOrNull()).make(reporter, getReportIssuesRootPath().getOrNull());
-                                throw new HandledException();
+                                throw DiffProblems.make(change.getFile(), diff(originalText, finalText), getLinkedApplyTaskPath().getOrNull(), reporter, getReportIssuesRootPath().getOrNull());
                             }
                         }
                     } catch (IOException e) {
                         // Fail-fast -- this is generally speaking _bad_
                         throw reporter.throwing(
                             e,
-                            FORMATTING_IO,
+                            reporter.immaculateGroup().problemId("IO issue occurred during formatting"),
                             spec -> {
                                 spec.fileLocation(relativize(change.getFile()));
                             }
