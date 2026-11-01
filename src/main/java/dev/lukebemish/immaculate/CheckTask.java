@@ -1,6 +1,5 @@
 package dev.lukebemish.immaculate;
 
-import dev.lukebemish.immaculate.steps.AugmentorStep;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.diff.DiffFormatter;

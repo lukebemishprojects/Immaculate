@@ -29,7 +29,8 @@ public class ProblemReportingHelper {
 
     public RuntimeException error(Throwable e, ProblemId id, Action<? super ProblemSpec> config) {
         try {
-            return problemReporter.throwing(e, id, config);
+            throwingLater(e, id, config);
+            return new HandledException();
         } catch (RuntimeException re) {
             return re;
         }
@@ -46,11 +47,10 @@ public class ProblemReportingHelper {
     }
 
     public RuntimeException throwing(Throwable e, ProblemId id, Action<? super ProblemSpec> config) {
-        throwingLater(e, id, config);
-        throw new HandledException();
+        throw error(e, id, config);
     }
 
-    public void flush(Task task) {
+    void flush(Task task) {
         List<RuntimeException> other;
         synchronized (suppressed) {
             other = new ArrayList<>(suppressed);
