@@ -4,14 +4,15 @@ import dev.lukebemish.immaculate.FileFormatter;
 import dev.lukebemish.immaculate.FormattingStep;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Nested;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
-import java.util.function.UnaryOperator;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public abstract class LinewiseStep extends FormattingStep {
     @Nested
-    public abstract Property<UnaryOperator<String>> getAction();
+    public abstract Property<Function<String, @Nullable String>> getAction();
 
     @Override
     public FileFormatter formatter() {

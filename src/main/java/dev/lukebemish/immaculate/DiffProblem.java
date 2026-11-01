@@ -3,7 +3,7 @@ package dev.lukebemish.immaculate;
 import org.gradle.api.file.Directory;
 import org.gradle.api.problems.ProblemId;
 import org.gradle.api.tasks.VerificationException;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 

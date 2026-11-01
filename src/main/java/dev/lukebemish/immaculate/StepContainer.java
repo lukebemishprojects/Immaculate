@@ -20,14 +20,13 @@ import javax.inject.Inject;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.UnaryOperator;
 
 public abstract class StepContainer {
     public NamedDomainObjectList<FormattingStep> getSteps() {
         return this.steps;
     }
 
-    public void linewise(String name, UnaryOperator<String> customAction) {
+    public void linewise(String name, Function<String, @Nullable String> customAction) {
         step(name, LinewiseStep.class, it -> it.getAction().set(customAction));
     }
 
